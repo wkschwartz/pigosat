@@ -16,11 +16,11 @@ const (
 	// their memory was previously freed.
 	NotReady = -1
 	// PicoSAT cannot determine the satisfiability of the formula.
-	UNKNOWN = 0
+	Unknown = 0
 	// The formula is satisfiable.
-	SATISFIABLE = 10
+	Satisfiable = 10
 	// The formula cannot be satisfied.
-	UNSATISFIABLE = 20
+	Unsatisfiable = 20
 )
 
 // Struct Picosat must be created with NewPicosat and destroyed with DelPicosat.
@@ -116,7 +116,7 @@ func (p *Picosat) AddClause(clause []int32) {
 }
 
 // Solve the formula and return the status of the solution: one of the constants
-// UNSATISFIABLE, SATISFIABLE, or UNKNOWN. If satisfiable, return a slice
+// Unsatisfiable, Satisfiable, or Unknown. If satisfiable, return a slice
 // indexed by the variables in the formula (so the first element is always
 // zero). A negative decision limit sets no limit on the number of decisions.
 func (p *Picosat) Solve(decision_limit int) (status int, solution []bool) {
@@ -125,9 +125,9 @@ func (p *Picosat) Solve(decision_limit int) (status int, solution []bool) {
 	}
 	// int picosat_sat (PicoSAT *, int decision_limit);
 	status = C.picosat_sat(p.p, C.int(decision_limit))
-	if status == UNSATISFIABLE || status == UNKNOWN {
+	if status == Unsatisfiable || status == Unknown {
 		return
-	} else if status != SATISFIABLE {
+	} else if status != Satisfiable {
 		panic(fmt.Errorf("Unknown sat status: %d", status))
 	}
 	n := p.Variables()

@@ -5,6 +5,8 @@ package pigosat
 
 // #include "picosat/picosat.h"
 import "C"
+import "time"
+import "fmt"
 
 // Note: Any comment that is in the /**/ style is (at least mostly) copied
 // directly from version 957 of picosat.h.
@@ -31,7 +33,7 @@ type Picosat struct {
 
 // NewPicosat returns a new Picosat instance, ready to have literals added to
 // it.
-func NewPicosat() Picosat {
+func NewPicosat() *Picosat {
 	// PicoSAT * picosat_init (void);
 	return &Picosat{p: C.picosat_init()}
 }
@@ -69,7 +71,7 @@ func (p *Picosat) Variables() int {
 		return 0
 	}
 	// int picosat_variables (PicoSAT *);
-	return C.picosat_variables(p.p)
+	return int(C.picosat_variables(p.p))
 }
 
 // AddedOriginalClauses returns the number of clauses in the formula: The n in
@@ -79,7 +81,7 @@ func (p *Picosat) AddedOriginalClauses() int {
 		return 0
 	}
 	// int picosat_added_original_clauses (PicoSAT *);
-	return C.picosat_added_original_clauses(p.p)
+	return int(C.picosat_added_original_clauses(p.p))
 }
 
 // Seconds returns the time spent in the PicoSAT library.
@@ -88,7 +90,7 @@ func (p *Picosat) Seconds() time.Duration {
 		return 0
 	}
 	// double picosat_seconds (PicoSAT *);
-	return time.Duration(C.picosat_seconds(p.p) * time.Second)
+	return time.Duration(float64(C.picosat_seconds(p.p)) * float64(time.Second))
 }
 
 // AddLits adds the next clause, resetting the solver if Solve had been called
@@ -124,7 +126,7 @@ func (p *Picosat) Solve(decision_limit int) (status int, solution []bool) {
 		return NotReady, nil
 	}
 	// int picosat_sat (PicoSAT *, int decision_limit);
-	status = C.picosat_sat(p.p, C.int(decision_limit))
+	status = int(C.picosat_sat(p.p, C.int(decision_limit)))
 	if status == Unsatisfiable || status == Unknown {
 		return
 	} else if status != Satisfiable {
@@ -134,12 +136,13 @@ func (p *Picosat) Solve(decision_limit int) (status int, solution []bool) {
 	solution = make([]bool, n)
 	for i := 1; i <= n; i++ {
 		// int picosat_deref (PicoSAT *, int lit);
-		if val := C.picosat_deref(p.p, C.int(lit)); val > 0 {
+		if val := C.picosat_deref(p.p, C.int(i)); val > 0 {
 			solution[i] = true
 		} else if val < 0 {
 			solution[i] = false
 		} else {
-			panic(fmt.Errof("Variable %d was assigned value 0", i))
+			panic(fmt.Errorf("Variable %d was assigned value 0", i))
 		}
 	}
+	return
 }

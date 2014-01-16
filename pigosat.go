@@ -9,12 +9,17 @@ import "C"
 // Note: Any comment that is in the /**/ style is (at least mostly) copied
 // directly from version 957 of picosat.h.
 
-/* These are the return values for 'picosat_sat' as for instance
- * standardized by the output format of the SAT competition.
- */
+// Return values for Picosat.Solve's status.
 const (
+	// NotReady is a solver status only used in PiGoSAT and it means the
+	// underlying data structures of the solver have not been initialized or
+	// their memory was previously freed.
+	NotReady = -1
+	// PicoSAT cannot determine the satisfiability of the formula.
 	UNKNOWN = 0
+	// The formula is satisfiable.
 	SATISFIABLE = 10
+	// The formula cannot be satisfied.
 	UNSATISFIABLE = 20
 )
 
@@ -35,6 +40,9 @@ func NewPicosat() Picosat {
 // scope or the program ends, or else the program will leak memory. Once
 // DelPicosat has been called on an instance, it cannot be used again.
 func (p *Picosat) DelPicosat() {
+	if p == nil || p.p == nil {
+		return
+	}
 	// void picosat_reset (PicoSAT *);
 	C.picosat_reset(p.p)
 	p.p = nil
@@ -47,6 +55,9 @@ func (p *Picosat) DelPicosat() {
  * do proper benchmarking of different internal parameter sets.
  */
 func (p *Picosat) SetSeed(seed uint32) {
+	if p == nil || p.p == nil {
+		return
+	}
 	// void picosat_set_seed (PicoSAT *, unsigned random_number_generator_seed);
 	C.picosat_set_seed(p.p, C.uint(seed))
 }
@@ -54,6 +65,9 @@ func (p *Picosat) SetSeed(seed uint32) {
 // Variables returns the number of variables in the formula: The m in the DIMACS
 // header "p cnf <m> n".
 func (p *Picosat) Variables() int {
+	if p == nil || p.p == nil {
+		return 0
+	}
 	// int picosat_variables (PicoSAT *);
 	return C.picosat_variables(p.p)
 }
@@ -61,12 +75,18 @@ func (p *Picosat) Variables() int {
 // AddedOriginalClauses returns the number of clauses in the formula: The n in
 // the DIMACS header "p cnf m <n>".
 func (p *Picosat) AddedOriginalClauses() int {
+	if p == nil || p.p == nil {
+		return 0
+	}
 	// int picosat_added_original_clauses (PicoSAT *);
 	return C.picosat_added_original_clauses(p.p)
 }
 
 // Seconds returns the time spent in the PicoSAT library.
 func (p *Picosat) Seconds() time.Duration {
+	if p == nil || p.p == nil {
+		return 0
+	}
 	// double picosat_seconds (PicoSAT *);
 	return time.Duration(C.picosat_seconds(p.p) * time.Second)
 }
@@ -76,6 +96,9 @@ func (p *Picosat) Seconds() time.Duration {
 // you to use one slice as reusable buffer). Otherwise the clause ends at the
 // end of the slice.
 func (p *Picosat) AddClause(clause []int32) {
+	if p == nil || p.p == nil {
+		return
+	}
 	c := make([]C.int, len(clause))
 	var had0 bool
 	for i, v := range clause {
@@ -97,6 +120,9 @@ func (p *Picosat) AddClause(clause []int32) {
 // indexed by the variables in the formula (so the first element is always
 // zero). A negative decision limit sets no limit on the number of decisions.
 func (p *Picosat) Solve(decision_limit int) (status int, solution []bool) {
+	if p == nil || p.p == nil {
+		return NotReady, nil
+	}
 	// int picosat_sat (PicoSAT *, int decision_limit);
 	status = C.picosat_sat(p.p, C.int(decision_limit))
 	if status == UNSATISFIABLE || status == UNKNOWN {

@@ -130,3 +130,28 @@ func TestPropLimit(t *testing.T) {
 		p.Delete()
 	}
 }
+
+// Test that nil method calls are no ops
+func TestNil(t *testing.T) {
+	var a, b *Picosat
+	b = NewPicosat(0)
+	b.Delete()
+	for name, p := range map[string]*Picosat{"uninit": a, "deleted": b} {
+		// No panicking
+		p.Delete()
+		p.AddClauses([][]int32{{1}, {2}})
+		if p.Variables() != 0 {
+			t.Errorf("Test %s: Expected 0 vars, got %d", name, p.Variables())
+		}
+		if c := p.AddedOriginalClauses(); c != 0 {
+			t.Errorf("Test %s: Expected 0 clauses, got %d", name, c)
+		}
+		if p.Seconds() != 0 {
+			t.Errorf("Test %s: Expected 0 seconds, got %v", name, p.Seconds())
+		}
+		if status, solution := p.Solve(); status != NotReady || solution != nil {
+			t.Errorf("Test %s: Expected status %d and nil solution, got %d and %v",
+				name, status, solution)
+		}
+	}
+}

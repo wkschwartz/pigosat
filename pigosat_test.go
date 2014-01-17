@@ -74,7 +74,6 @@ func init() {
 	}
 }
 
-
 func wasExpected(t *testing.T, i int, p *Picosat, ft *formulaTest, status int,
 	solution []bool) {
 	if status != ft.status {

@@ -47,7 +47,7 @@ func NewPicosat() *Picosat {
 // DelPicosat must be called on every Picosat instance before each goes out of
 // scope or the program ends, or else the program will leak memory. Once
 // DelPicosat has been called on an instance, it cannot be used again.
-func (p *Picosat) DelPicosat() {
+func (p *Picosat) Delete() {
 	if p == nil || p.p == nil {
 		return
 	}

@@ -43,22 +43,25 @@ func evaluate(formula [][]int32, solution []bool) bool {
 }
 
 
+type formulaTest struct {
+	formula [][]int32
+	variables int // count
+	status int
+	expected []bool // solution
+}
+
 // The first three tests are cribbed from Ilan Schnell's Pycosat. See
 // https://github.com/ContinuumIO/pycosat. In particular, these are from commit
 // d81df1e in test_pycosat.py.
-var formulaTests = []struct {
-	formula [][]int32
-	status int
-	expected []bool
-}{
+var formulaTests = []formulaTest{
 	{[][]int32{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
-		Satisfiable,
+		5, Satisfiable,
 		[]bool{false, true, false, false, false, true}},
 	{[][]int32{{-1}, {1}},
-		Unsatisfiable,
+		1, Unsatisfiable,
 		nil},
 	{[][]int32{{-1, 2}, {-1, -2}, {1, -2}},
-		Satisfiable,
+		2, Satisfiable,
 		[]bool{false, false, false}},
 }
 
@@ -72,6 +75,25 @@ func init() {
 }
 
 
+func wasExpected(t *testing.T, i int, p *Picosat, ft *formulaTest, status int,
+	solution []bool) {
+	if status != ft.status {
+		t.Errorf("Test %d: Expected status %d but got %d", i, ft.status, status)
+	}
+	if !equal(solution, ft.expected) {
+		t.Errorf("Test %d: Expected solution %v but got %v", i, ft.expected,
+			solution)
+	}
+	if p.Variables() != ft.variables {
+		t.Errorf("Test %d: Expected %d variables, got %d", i, ft.variables,
+			p.Variables())
+	}
+	if p.AddedOriginalClauses() != len(ft.formula) {
+		t.Errorf("Test %d: Exepcted %d clauses, got %d", i, len(ft.formula),
+			p.AddedOriginalClauses())
+	}
+}
+
 func TestFormulas(t *testing.T) {
 	var p *Picosat
 	var status int
@@ -80,13 +102,7 @@ func TestFormulas(t *testing.T) {
 		p = NewPicosat(0)
 		p.AddClauses(ft.formula)
 		status, solution = p.Solve()
-		if status != ft.status {
-			t.Errorf("Test %d: Expected status %d but got %d", i, ft.status, status)
-		}
-		if !equal(solution, ft.expected) {
-			t.Errorf("Test %d: Expected solution %v but got %v", i, ft.expected,
-				solution)
-		}
+		wasExpected(t, i, p, &ft, status, solution)
 		p.Delete()
 	}
 }
@@ -110,13 +126,7 @@ func TestPropLimit(t *testing.T) {
 			p.Delete()
 			continue
 		}
-		if status != ft.status {
-			t.Errorf("Test %d: Expected status %d but got %d", 1, ft.status, status)
-		}
-		if !equal(solution, ft.expected) {
-			t.Errorf("Test %d: Expected solution %v but got %v", 1, ft.expected,
-				solution)
-		}
+		wasExpected(t, 0, p, &ft, status, solution)
 		p.Delete()
 	}
 }

@@ -38,10 +38,17 @@ type Picosat struct {
 }
 
 // NewPicosat returns a new Picosat instance, ready to have literals added to
-// it.
-func NewPicosat() *Picosat {
+// it. Set propogation_limit to a positive value to limit how long the solver
+// tries to find a solution.
+func NewPicosat(propagation_limit uint64) *Picosat {
 	// PicoSAT * picosat_init (void);
-	return &Picosat{p: C.picosat_init()}
+	p := C.picosat_init()
+	// void picosat_set_propagation_limit (PicoSAT *, unsigned long long limit);
+	// Must be called after init, before solve, so we do it in the constructor.
+	if propagation_limit > 0 {
+		C.picosat_set_propagation_limit(p, C.ulonglong(propagation_limit))
+	}
+	return &Picosat{p: p}
 }
 
 // DelPicosat must be called on every Picosat instance before each goes out of
@@ -117,13 +124,13 @@ func (p *Picosat) AddClauses(clauses [][]int32) {
 // Solve the formula and return the status of the solution: one of the constants
 // Unsatisfiable, Satisfiable, or Unknown. If satisfiable, return a slice
 // indexed by the variables in the formula (so the first element is always
-// false). A negative decision limit sets no limit on the number of decisions.
-func (p *Picosat) Solve(decision_limit int) (status int, solution []bool) {
+// false).
+func (p *Picosat) Solve() (status int, solution []bool) {
 	if p == nil || p.p == nil {
 		return NotReady, nil
 	}
 	// int picosat_sat (PicoSAT *, int decision_limit);
-	status = int(C.picosat_sat(p.p, C.int(decision_limit)))
+	status = int(C.picosat_sat(p.p, -1))
 	if status == Unsatisfiable || status == Unknown {
 		return
 	} else if status != Satisfiable {

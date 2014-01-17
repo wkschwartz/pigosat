@@ -14,9 +14,6 @@ import "C"
 import "time"
 import "fmt"
 
-// Note: Any comment that is in the /**/ style is (at least mostly) copied
-// directly from version 957 of picosat.h.
-
 // Return values for Picosat.Solve's status.
 const (
 	// NotReady is a solver status only used in PiGoSAT and it means the

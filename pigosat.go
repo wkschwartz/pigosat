@@ -3,7 +3,13 @@
 // Package pigosat is a Go binding for the PicoSAT satisfiability solver.
 package pigosat
 
-// #include "picosat/picosat.h"
+// To build the PicoSAT dependency, run
+//     $ cd picosat; make picosat.o
+// No need to run picosat/configure.
+
+// #cgo CFLAGS:-I picosat
+// #cgo LDFLAGS: -l picosat.o -L picosat
+// #include "picosat.h"
 import "C"
 import "time"
 import "fmt"

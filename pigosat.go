@@ -56,20 +56,6 @@ func (p *Picosat) Delete() {
 	p.p = nil
 }
 
-/* SetSeed: Set a seed for the random number generator. The random number generator
- * is currently just used for generating random decisions.  In our
- * experiments having random decisions did not really help on industrial
- * examples, but was rather helpful to randomize the solver in order to
- * do proper benchmarking of different internal parameter sets.
- */
-func (p *Picosat) SetSeed(seed uint32) {
-	if p == nil || p.p == nil {
-		return
-	}
-	// void picosat_set_seed (PicoSAT *, unsigned random_number_generator_seed);
-	C.picosat_set_seed(p.p, C.uint(seed))
-}
-
 // Variables returns the number of variables in the formula: The m in the DIMACS
 // header "p cnf <m> n".
 func (p *Picosat) Variables() int {

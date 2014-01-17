@@ -45,13 +45,12 @@ func evaluate(formula [][]int32, solution []bool) bool {
 	return true
 }
 
-
 type formulaTest struct {
-	formula [][]int32
+	formula   [][]int32
 	variables int // count
-	clauses int // count
-	status int
-	expected []bool // solution
+	clauses   int // count
+	status    int
+	expected  []bool // solution
 }
 
 // The first three tests are cribbed from Ilan Schnell's Pycosat. See

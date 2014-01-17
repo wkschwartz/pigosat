@@ -140,7 +140,7 @@ func (p *Picosat) Solve() (status int, solution []bool) {
 		panic(fmt.Errorf("Unknown sat status: %d", status))
 	}
 	n := p.Variables()
-	solution = make([]bool, n + 1)
+	solution = make([]bool, n+1)
 	for i := 1; i <= n; i++ {
 		// int picosat_deref (PicoSAT *, int lit);
 		if val := C.picosat_deref(p.p, C.int(i)); val > 0 {

@@ -28,6 +28,9 @@ func evaluate(formula [][]int32, solution []bool) bool {
 	var c bool // The value for the clause
 	for _, clause := range formula {
 		c = false
+		if len(clause) == 0 {
+			continue
+		}
 		for _, literal := range clause {
 			if literal > 0 && solution[abs(literal)] ||
 				literal < 0 && !solution[abs(literal)] {
@@ -46,6 +49,7 @@ func evaluate(formula [][]int32, solution []bool) bool {
 type formulaTest struct {
 	formula [][]int32
 	variables int // count
+	clauses int // count
 	status int
 	expected []bool // solution
 }
@@ -55,14 +59,18 @@ type formulaTest struct {
 // d81df1e in test_pycosat.py.
 var formulaTests = []formulaTest{
 	{[][]int32{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
-		5, Satisfiable,
+		5, 3, Satisfiable,
 		[]bool{false, true, false, false, false, true}},
 	{[][]int32{{-1}, {1}},
-		1, Unsatisfiable,
+		1, 2, Unsatisfiable,
 		nil},
 	{[][]int32{{-1, 2}, {-1, -2}, {1, -2}},
-		2, Satisfiable,
+		2, 3, Satisfiable,
 		[]bool{false, false, false}},
+	// For testing that empty clauses are skipped and 0s end clauses
+	{[][]int32{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
+		5, 3, Satisfiable,
+		[]bool{false, true, false, false, false, true}},
 }
 
 // Ensure our expected solutions are correct.
@@ -87,8 +95,8 @@ func wasExpected(t *testing.T, i int, p *Picosat, ft *formulaTest, status int,
 		t.Errorf("Test %d: Expected %d variables, got %d", i, ft.variables,
 			p.Variables())
 	}
-	if p.AddedOriginalClauses() != len(ft.formula) {
-		t.Errorf("Test %d: Exepcted %d clauses, got %d", i, len(ft.formula),
+	if p.AddedOriginalClauses() != ft.clauses {
+		t.Errorf("Test %d: Exepcted %d clauses, got %d", i, ft.clauses,
 			p.AddedOriginalClauses())
 	}
 }

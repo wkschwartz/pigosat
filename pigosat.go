@@ -106,6 +106,9 @@ func (p *Picosat) AddClauses(clauses [][]int32) {
 	}
 	var had0 bool
 	for _, clause := range clauses {
+		if len(clause) == 0 {
+			continue
+		}
 		had0 = false
 		for _, lit := range clause {
 			// int picosat_add (PicoSAT *, int lit);

@@ -91,8 +91,6 @@ func TestFormulas(t *testing.T) {
 	}
 }
 
-const seed = 0xbadcafe
-
 // Also cribbed from Pycosat
 func TestPropLimit(t *testing.T) {
 	var p *Picosat

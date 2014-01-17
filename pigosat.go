@@ -99,28 +99,33 @@ func (p *Picosat) Seconds() time.Duration {
 	return time.Duration(float64(C.picosat_seconds(p.p)) * float64(time.Second))
 }
 
-// AddLits adds the next clause, resetting the solver if Solve had been called
-// already. Including a zero in the clause terminates the clause (thus allowing
-// you to use one slice as reusable buffer). Otherwise the clause ends at the
-// end of the slice.
-func (p *Picosat) AddClause(clause []int32) {
+// AddClauses adds a list (as a slice) of clauses (the sub-slices). Each clause
+// is a list of integers called literals. The absolute value of the literal i is
+// the subscript for some variable x_i. If the literal is positive, x_i must end
+// up being true when the formula is solved. If the literal is negative, it must
+// end up false. Each clause ORs the literals together. All the clauses are
+// ANDed together. Literals cannot be zero: a zero in the middle of a slice ends
+// the clause, and causes AddClauses to skip reading the rest of the slice. Nil
+// slices are ignored and skipped.
+func (p *Picosat) AddClauses(clauses [][]int32) {
 	if p == nil || p.p == nil {
 		return
 	}
-	c := make([]C.int, len(clause))
 	var had0 bool
-	for i, v := range clause {
-		c[i] = C.int(v)
-		if v == 0 {
-			had0 = true
-			break
+	for _, clause := range clauses {
+		had0 = false
+		for _, lit := range clause {
+			// int picosat_add (PicoSAT *, int lit);
+			C.picosat_add(p.p, C.int(lit))
+			if lit == 0 {
+				had0 = true
+				break
+			}
+		}
+		if !had0 {
+			C.picosat_add(p.p, 0)
 		}
 	}
-	if !had0 {
-		c = append(c, 0)
-	}
-	// int picosat_add_lits (PicoSAT *, int * lits);
-	C.picosat_add_lits(p.p, &c[0])
 }
 
 // Solve the formula and return the status of the solution: one of the constants

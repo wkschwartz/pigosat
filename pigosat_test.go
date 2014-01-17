@@ -1,6 +1,7 @@
 package pigosat
 
 import "testing"
+import "time"
 
 // abs takes the absolute value of an int32 and casts it to int.
 func abs(x int32) int {
@@ -97,6 +98,9 @@ func wasExpected(t *testing.T, i int, p *Picosat, ft *formulaTest, status int,
 	if p.AddedOriginalClauses() != ft.clauses {
 		t.Errorf("Test %d: Exepcted %d clauses, got %d", i, ft.clauses,
 			p.AddedOriginalClauses())
+	}
+	if s := p.Seconds(); s <= 0 || s > time.Millisecond {
+		t.Errorf("Test %d: Test took a suspicious amount of time: %v", i, s)
 	}
 }
 

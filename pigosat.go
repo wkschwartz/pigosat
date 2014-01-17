@@ -117,7 +117,7 @@ func (p *Picosat) AddClauses(clauses [][]int32) {
 // Solve the formula and return the status of the solution: one of the constants
 // Unsatisfiable, Satisfiable, or Unknown. If satisfiable, return a slice
 // indexed by the variables in the formula (so the first element is always
-// zero). A negative decision limit sets no limit on the number of decisions.
+// false). A negative decision limit sets no limit on the number of decisions.
 func (p *Picosat) Solve(decision_limit int) (status int, solution []bool) {
 	if p == nil || p.p == nil {
 		return NotReady, nil

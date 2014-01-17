@@ -10,6 +10,18 @@ func abs(x int32) int {
 	return int(x)
 }
 
+func equal(x, y []bool) bool {
+	if len(x) != len(y) {
+		return false
+	}
+	for i := 0; i < len(x); i++ {
+		if x[i] != y[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // Evaluate a formula when the variables take on the values given by the
 // solution.
 func evaluate(formula [][]int32, solution []bool) bool {
@@ -28,4 +40,85 @@ func evaluate(formula [][]int32, solution []bool) bool {
 		}
 	}
 	return true
+}
+
+
+// The first three tests are cribbed from Ilan Schnell's Pycosat. See
+// https://github.com/ContinuumIO/pycosat. In particular, these are from commit
+// d81df1e in test_pycosat.py.
+var formulaTests = []struct {
+	formula [][]int32
+	status int
+	expected []bool
+}{
+	{[][]int32{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
+		Satisfiable,
+		[]bool{false, true, false, false, false, true}},
+	{[][]int32{{-1}, {1}},
+		Unsatisfiable,
+		nil},
+	{[][]int32{{-1, 2}, {-1, -2}, {1, -2}},
+		Satisfiable,
+		[]bool{false, false, false}},
+}
+
+// Ensure our expected solutions are correct.
+func init() {
+	for i, ft := range formulaTests {
+		if ft.status == Satisfiable && !evaluate(ft.formula, ft.expected) {
+			panic(i)
+		}
+	}
+}
+
+
+func TestFormulas(t *testing.T) {
+	var p *Picosat
+	var status int
+	var solution []bool
+	for i, ft := range formulaTests {
+		p = NewPicosat(0)
+		p.AddClauses(ft.formula)
+		status, solution = p.Solve()
+		if status != ft.status {
+			t.Errorf("Test %d: Expected status %d but got %d", i, ft.status, status)
+		}
+		if !equal(solution, ft.expected) {
+			t.Errorf("Test %d: Expected solution %v but got %v", i, ft.expected,
+				solution)
+		}
+		p.Delete()
+	}
+}
+
+const seed = 0xbadcafe
+
+// Also cribbed from Pycosat
+func TestPropLimit(t *testing.T) {
+	var p *Picosat
+	var status int
+	var solution []bool
+	ft := formulaTests[0]
+	var limit uint64
+	for limit = 1; limit < 20; limit++ {
+		p = NewPicosat(limit)
+		p.AddClauses(ft.formula)
+		status, solution = p.Solve()
+		if limit < 8 {
+			if status != Unknown {
+				t.Errorf("Propagation limit %d had no effect on formula 0",
+					limit)
+			}
+			p.Delete()
+			continue
+		}
+		if status != ft.status {
+			t.Errorf("Test %d: Expected status %d but got %d", 1, ft.status, status)
+		}
+		if !equal(solution, ft.expected) {
+			t.Errorf("Test %d: Expected solution %v but got %v", 1, ft.expected,
+				solution)
+		}
+		p.Delete()
+	}
 }

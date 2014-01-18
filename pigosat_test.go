@@ -1,3 +1,5 @@
+// Copyright William Schwartz 2014. See the LICENSE file for more information.
+
 package pigosat
 
 import "testing"

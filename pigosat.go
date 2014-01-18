@@ -1,4 +1,4 @@
-// Copyright William Schwartz 2014. All rights reserved.
+// Copyright William Schwartz 2014. See the LICENSE file for more information.
 
 // Package pigosat is a Go binding for the PicoSAT satisfiability solver.
 package pigosat

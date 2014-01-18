@@ -107,7 +107,7 @@ func init() {
 	}
 }
 
-func wasExpected(t *testing.T, i int, p *Picosat, ft *formulaTest, status int,
+func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest, status int,
 	solution []bool) {
 	if status != ft.status {
 		t.Errorf("Test %d: Expected status %d but got %d", i, ft.status, status)
@@ -130,11 +130,11 @@ func wasExpected(t *testing.T, i int, p *Picosat, ft *formulaTest, status int,
 }
 
 func TestFormulas(t *testing.T) {
-	var p *Picosat
+	var p *Pigosat
 	var status int
 	var solution []bool
 	for i, ft := range formulaTests {
-		p = NewPicosat(0)
+		p = NewPigosat(0)
 		p.AddClauses(ft.formula)
 		status, solution = p.Solve()
 		wasExpected(t, i, p, &ft, status, solution)
@@ -144,13 +144,13 @@ func TestFormulas(t *testing.T) {
 
 // Also cribbed from Pycosat
 func TestPropLimit(t *testing.T) {
-	var p *Picosat
+	var p *Pigosat
 	var status int
 	var solution []bool
 	ft := formulaTests[0]
 	var limit uint64
 	for limit = 1; limit < 20; limit++ {
-		p = NewPicosat(limit)
+		p = NewPigosat(limit)
 		p.AddClauses(ft.formula)
 		status, solution = p.Solve()
 		if limit < 8 {
@@ -168,10 +168,10 @@ func TestPropLimit(t *testing.T) {
 
 // Test that nil method calls are no ops
 func TestNil(t *testing.T) {
-	var a, b *Picosat
-	b = NewPicosat(0)
+	var a, b *Pigosat
+	b = NewPigosat(0)
 	b.Delete()
-	for name, p := range map[string]*Picosat{"uninit": a, "deleted": b} {
+	for name, p := range map[string]*Pigosat{"uninit": a, "deleted": b} {
 		// No panicking
 		p.Delete()
 		p.AddClauses([][]int32{{1}, {2}})

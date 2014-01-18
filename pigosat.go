@@ -12,7 +12,7 @@ import "C"
 import "time"
 import "fmt"
 
-// Return values for Picosat.Solve's status.
+// Return values for Pigosat.Solve's status.
 const (
 	// NotReady is a solver status only used in PiGoSAT and it means the
 	// underlying data structures of the solver have not been initialized or
@@ -26,16 +26,16 @@ const (
 	Unsatisfiable = 20
 )
 
-// Struct Picosat must be created with NewPicosat and destroyed with DelPicosat.
-type Picosat struct {
+// Struct Pigosat must be created with NewPigosat and destroyed with DelPigosat.
+type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p *C.PicoSAT
 }
 
-// NewPicosat returns a new Picosat instance, ready to have literals added to
+// NewPigosat returns a new Pigosat instance, ready to have literals added to
 // it. Set propogation_limit to a positive value to limit how long the solver
 // tries to find a solution.
-func NewPicosat(propagation_limit uint64) *Picosat {
+func NewPigosat(propagation_limit uint64) *Pigosat {
 	// PicoSAT * picosat_init (void);
 	p := C.picosat_init()
 	// void picosat_set_propagation_limit (PicoSAT *, unsigned long long limit);
@@ -43,13 +43,13 @@ func NewPicosat(propagation_limit uint64) *Picosat {
 	if propagation_limit > 0 {
 		C.picosat_set_propagation_limit(p, C.ulonglong(propagation_limit))
 	}
-	return &Picosat{p: p}
+	return &Pigosat{p: p}
 }
 
-// DelPicosat must be called on every Picosat instance before each goes out of
+// DelPigosat must be called on every Pigosat instance before each goes out of
 // scope or the program ends, or else the program will leak memory. Once
-// DelPicosat has been called on an instance, it cannot be used again.
-func (p *Picosat) Delete() {
+// DelPigosat has been called on an instance, it cannot be used again.
+func (p *Pigosat) Delete() {
 	if p == nil || p.p == nil {
 		return
 	}
@@ -60,7 +60,7 @@ func (p *Picosat) Delete() {
 
 // Variables returns the number of variables in the formula: The m in the DIMACS
 // header "p cnf <m> n".
-func (p *Picosat) Variables() int {
+func (p *Pigosat) Variables() int {
 	if p == nil || p.p == nil {
 		return 0
 	}
@@ -70,7 +70,7 @@ func (p *Picosat) Variables() int {
 
 // AddedOriginalClauses returns the number of clauses in the formula: The n in
 // the DIMACS header "p cnf m <n>".
-func (p *Picosat) AddedOriginalClauses() int {
+func (p *Pigosat) AddedOriginalClauses() int {
 	if p == nil || p.p == nil {
 		return 0
 	}
@@ -79,7 +79,7 @@ func (p *Picosat) AddedOriginalClauses() int {
 }
 
 // Seconds returns the time spent in the PicoSAT library.
-func (p *Picosat) Seconds() time.Duration {
+func (p *Pigosat) Seconds() time.Duration {
 	if p == nil || p.p == nil {
 		return 0
 	}
@@ -95,7 +95,7 @@ func (p *Picosat) Seconds() time.Duration {
 // ANDed together. Literals cannot be zero: a zero in the middle of a slice ends
 // the clause, and causes AddClauses to skip reading the rest of the slice. Nil
 // slices are ignored and skipped.
-func (p *Picosat) AddClauses(clauses [][]int32) {
+func (p *Pigosat) AddClauses(clauses [][]int32) {
 	if p == nil || p.p == nil {
 		return
 	}
@@ -123,7 +123,7 @@ func (p *Picosat) AddClauses(clauses [][]int32) {
 // Unsatisfiable, Satisfiable, or Unknown. If satisfiable, return a slice
 // indexed by the variables in the formula (so the first element is always
 // false).
-func (p *Picosat) Solve() (status int, solution []bool) {
+func (p *Pigosat) Solve() (status int, solution []bool) {
 	if p == nil || p.p == nil {
 		return NotReady, nil
 	}

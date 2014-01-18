@@ -4,6 +4,7 @@ package pigosat
 
 import "testing"
 import "time"
+import "fmt"
 
 // abs takes the absolute value of an int32 and casts it to int.
 func abs(x int32) int {
@@ -189,4 +190,29 @@ func TestNil(t *testing.T) {
 				name, NotReady, status, solution)
 		}
 	}
+}
+
+
+// This is the example from the README.
+func Example_readme() {
+	p := NewPigosat(0)
+	defer p.Delete()
+	p.AddClauses([][]int32{{1, 2}, {-2}})
+	fmt.Println("")
+	fmt.Printf("# variables == %d\n", p.Variables())
+	fmt.Printf("# clauses == %d\n", p.AddedOriginalClauses())
+	status, solution := p.Solve()
+	if status == Satisfiable {
+		fmt.Println("status == pigosat.Satisfiable")
+	}
+	fmt.Printf("len(solution) == %d\n", len(solution))
+	fmt.Printf("solution[1] == %v\n", solution[1])
+	fmt.Printf("solution[2] == %v\n", solution[2])
+	// Output:
+	// # variables == 2
+	// # clauses == 2
+	// status == pigosat.Satisfiable
+	// len(solution) == 3
+	// solution[1] == true
+	// solution[2] == false
 }

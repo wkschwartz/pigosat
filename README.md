@@ -60,7 +60,7 @@ the clauses with `Pigosat.AddClauses`. Solve the formula with
 package main
 import "pigosat"
 func main() {
-	p := pigosat.NewPigosat(-1)
+	p := pigosat.NewPigosat(0)
 	defer p.Delete()
 	p.AddClauses([][]int32{{1, 2}, {-2}})
 	status, solution := p.Solve()

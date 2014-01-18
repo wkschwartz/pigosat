@@ -186,7 +186,7 @@ func TestNil(t *testing.T) {
 		}
 		if status, solution := p.Solve(); status != NotReady || solution != nil {
 			t.Errorf("Test %s: Expected status %d and nil solution, got %d and %v",
-				name, status, solution)
+				name, NotReady, status, solution)
 		}
 	}
 }

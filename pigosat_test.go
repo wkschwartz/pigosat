@@ -11,6 +11,7 @@ func abs(x int32) int {
 	return int(x)
 }
 
+// equal returns true if the two slices have the same contents.
 func equal(x, y []bool) bool {
 	if len(x) != len(y) {
 		return false

@@ -13,7 +13,7 @@ import "time"
 import "fmt"
 import "sync"
 
-var Version = SemanticVersion{0, 1, 0, "b", 0}
+var Version = SemanticVersion{0, 1, 0, "", 0}
 
 // PicosatVersion returns the version string from the underlying Picosat
 // library.

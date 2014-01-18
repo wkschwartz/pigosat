@@ -5,6 +5,7 @@ package pigosat
 import "testing"
 import "time"
 import "fmt"
+import "regexp"
 
 // abs takes the absolute value of an int32 and casts it to int.
 func abs(x int32) int {
@@ -192,6 +193,26 @@ func TestNil(t *testing.T) {
 	}
 }
 
+var semanticVersionTests = []SemanticVersion{
+	Version, // Test PiGoSAT's actual version
+	{0, 1, 0, "b", 0},
+	{1, 2, 3, "", 1}}
+var semanticVersionRE = regexp.MustCompile(`\d+\.\d+\.\d+(?:\.?[abc]\.?\d+)?`)
+
+func TestSemanticVersionString(t *testing.T) {
+	for _, v := range semanticVersionTests {
+		if s := v.String(); !semanticVersionRE.MatchString(s) {
+			t.Errorf("Bad version string: %s", s)
+		}
+	}
+}
+
+// Test our assumption about what Picosat we're using.
+func TestPicosatVersion(t *testing.T) {
+	if v := PicosatVersion(); v != "957" {
+		t.Errorf("Expected Picosat version 957, got version %s", v)
+	}
+}
 
 // This is the example from the README.
 func Example_readme() {

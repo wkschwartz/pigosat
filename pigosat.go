@@ -3,14 +3,39 @@
 // Package pigosat is a Go binding for the PicoSAT satisfiability solver.
 package pigosat
 
-// picosat/picosat.o must exist to build this file. See README.md.
+// picosat/libpicosat.a must exist to build this file. See README.md.
 
-// #cgo CFLAGS:-I picosat
-// #cgo LDFLAGS: -l picosat.o -L picosat
+// #cgo CFLAGS: -I picosat
+// #cgo LDFLAGS: -l picosat -L picosat
 // #include "picosat.h"
 import "C"
 import "time"
 import "fmt"
+
+
+type SemanticVersion struct {
+	Major, Minor, Patch uint
+	// "a" for alpha, "b" for beta, "c" for release candidate, "" for stable
+	Prerelease string
+	// Ignored if not a prerelease
+	Step uint
+}
+
+func (v SemanticVersion) String() string {
+	var prerelease string
+	if v.Prerelease != "" {
+		prerelease = fmt.Sprintf("%s%d", v.Prerelease, v.Step)
+	}
+	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch) + prerelease
+}
+
+var Version = SemanticVersion{0, 1, 0, "b", 0}
+
+// PicosatVersion returns the version string from the underlying Picosat
+// library.
+func PicosatVersion() string {
+	return C.GoString(C.picosat_version())
+}
 
 // Return values for Pigosat.Solve's status.
 const (

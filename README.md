@@ -21,12 +21,16 @@ PiGoSAT is a wrapper around [Picosat](http://fmv.jku.at/picosat/), whose C
 source files are included in this repository. Go's
 [cgo](http://golang.org/cmd/cgo/) system claims to compile C source code it
 finds, but I can't figure out how to get it to work. So you'll have to compile
-PicoSAT first. For this reason, PiGoSAT is not `go get`able. You can simply
-compile picosat.c without anything else:
+PicoSAT first. For this reason, PiGoSAT is not `go get`able. The following
+commands should be sufficient to compile `libpicosat` on most Unix systems. (If
+know how to compile PiGoSAT on Windows, please submit instructions and I will
+add them; see the "Contributing" section).
 
 ```bash
 $ cd picosat
-$ gcc -Wall -Wextra -DNDEBUG -O3 -c picosat.c
+$ ./configure
+$ make libpicosat.a
+$ cp libpicosat.a tmp && make clean && mv tmp libpicosat.a # Optional clean up
 $ cd ..
 ```
 

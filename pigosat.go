@@ -12,23 +12,6 @@ import "C"
 import "time"
 import "fmt"
 
-
-type SemanticVersion struct {
-	Major, Minor, Patch uint
-	// "a" for alpha, "b" for beta, "c" for release candidate, "" for stable
-	Prerelease string
-	// Ignored if not a prerelease
-	Step uint
-}
-
-func (v SemanticVersion) String() string {
-	var prerelease string
-	if v.Prerelease != "" {
-		prerelease = fmt.Sprintf("%s%d", v.Prerelease, v.Step)
-	}
-	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch) + prerelease
-}
-
 var Version = SemanticVersion{0, 1, 0, "b", 0}
 
 // PicosatVersion returns the version string from the underlying Picosat

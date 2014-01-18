@@ -54,21 +54,21 @@ type formulaTest struct {
 	expected  []bool // solution
 }
 
-// The first three tests are cribbed from Ilan Schnell's Pycosat. See
-// https://github.com/ContinuumIO/pycosat. In particular, these are from commit
-// d81df1e in test_pycosat.py.
 var formulaTests = []formulaTest{
-	{[][]int32{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
+	// The first three tests are cribbed from Ilan Schnell's Pycosat. See
+	// https://github.com/ContinuumIO/pycosat. In particular, these are from
+	// commit d81df1e in test_pycosat.py.
+	0: {[][]int32{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
 		5, 3, Satisfiable,
 		[]bool{false, true, false, false, false, true}},
-	{[][]int32{{-1}, {1}},
+	1: {[][]int32{{-1}, {1}},
 		1, 2, Unsatisfiable,
 		nil},
-	{[][]int32{{-1, 2}, {-1, -2}, {1, -2}},
+	2: {[][]int32{{-1, 2}, {-1, -2}, {1, -2}},
 		2, 3, Satisfiable,
 		[]bool{false, false, false}},
 	// For testing that empty clauses are skipped and 0s end clauses
-	{[][]int32{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
+	3: {[][]int32{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
 		5, 3, Satisfiable,
 		[]bool{false, true, false, false, false, true}},
 }

@@ -19,7 +19,8 @@ Building
 
 Go's [cgo](http://golang.org/cmd/cgo/) system claims to compile C source code it
 finds, but I can't figure out how to get it to work. So you'll have to compile
-PicoSAT first. You can simply compile picosat.c without anything else:
+PicoSAT first. For this reason, PiGoSAT is not `go get`able. You can simply
+compile picosat.c without anything else:
 
 ```bash
 $ cd picosat

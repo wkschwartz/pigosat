@@ -11,6 +11,7 @@ package pigosat
 import "C"
 import "time"
 import "fmt"
+import "sync"
 
 var Version = SemanticVersion{0, 1, 0, "b", 0}
 
@@ -38,6 +39,7 @@ const (
 type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p *C.PicoSAT
+	lock *sync.RWMutex
 }
 
 // NewPigosat returns a new Pigosat instance, ready to have literals added to
@@ -51,7 +53,7 @@ func NewPigosat(propagation_limit uint64) *Pigosat {
 	if propagation_limit > 0 {
 		C.picosat_set_propagation_limit(p, C.ulonglong(propagation_limit))
 	}
-	return &Pigosat{p: p}
+	return &Pigosat{p: p, lock: new(sync.RWMutex)}
 }
 
 // DelPigosat must be called on every Pigosat instance before each goes out of
@@ -61,6 +63,8 @@ func (p *Pigosat) Delete() {
 	if p == nil || p.p == nil {
 		return
 	}
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	// void picosat_reset (PicoSAT *);
 	C.picosat_reset(p.p)
 	p.p = nil
@@ -72,6 +76,8 @@ func (p *Pigosat) Variables() int {
 	if p == nil || p.p == nil {
 		return 0
 	}
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	// int picosat_variables (PicoSAT *);
 	return int(C.picosat_variables(p.p))
 }
@@ -82,6 +88,8 @@ func (p *Pigosat) AddedOriginalClauses() int {
 	if p == nil || p.p == nil {
 		return 0
 	}
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	// int picosat_added_original_clauses (PicoSAT *);
 	return int(C.picosat_added_original_clauses(p.p))
 }
@@ -91,6 +99,8 @@ func (p *Pigosat) Seconds() time.Duration {
 	if p == nil || p.p == nil {
 		return 0
 	}
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	// double picosat_seconds (PicoSAT *);
 	return time.Duration(float64(C.picosat_seconds(p.p)) * float64(time.Second))
 }
@@ -107,6 +117,8 @@ func (p *Pigosat) AddClauses(clauses [][]int32) {
 	if p == nil || p.p == nil {
 		return
 	}
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	var had0 bool
 	for _, clause := range clauses {
 		if len(clause) == 0 {
@@ -135,6 +147,8 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 	if p == nil || p.p == nil {
 		return NotReady, nil
 	}
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	// int picosat_sat (PicoSAT *, int decision_limit);
 	status = int(C.picosat_sat(p.p, -1))
 	if status == Unsatisfiable || status == Unknown {
@@ -142,7 +156,7 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 	} else if status != Satisfiable {
 		panic(fmt.Errorf("Unknown sat status: %d", status))
 	}
-	n := p.Variables()
+	n := int(C.picosat_variables(p.p)) // Calling Pigosat.Variables deadlocks
 	solution = make([]bool, n+1)
 	for i := 1; i <= n; i++ {
 		// int picosat_deref (PicoSAT *, int lit);

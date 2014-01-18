@@ -71,6 +71,28 @@ var formulaTests = []formulaTest{
 	3: {[][]int32{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
 		5, 3, Satisfiable,
 		[]bool{false, true, false, false, false, true}},
+	// Armin Biere, "Using High Performance SAT and QBF Solvers", presentation
+	// given 2011-01-24, pp. 23-48,
+	// http://fmv.jku.at/biere/talks/Biere-TPTPA11.pdf
+	// From "DIMACS example 1"
+	4: {[][]int32{{-2}, {-1, -3}, {1, 2}, {2, 3}},
+		3, 4, Unsatisfiable, nil},
+	// From "Satisfying Assignments Example 2"
+	5: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}},
+		2, 3, Satisfiable,
+		[]bool{false, true, true}},
+	6: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}, {-1}},
+		2, 4, Unsatisfiable, nil},
+	7: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}, {-2}},
+		2, 4, Unsatisfiable, nil},
+	// From "ex3.cnf"
+	8: {[][]int32{{1, 2, 3}, {1, 2, -3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
+		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {1, 4}},
+		6, 10, Unsatisfiable, nil},
+	// From "ex4.cnf"
+	9: {[][]int32{{1, 2, 3}, {1, 2 - 3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
+		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {-1, 4}, {-1, -4}},
+		6, 11, Satisfiable, []bool{false, false, false, true, true, false, false}},
 }
 
 // Ensure our expected solutions are correct.

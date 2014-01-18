@@ -3,9 +3,7 @@
 // Package pigosat is a Go binding for the PicoSAT satisfiability solver.
 package pigosat
 
-// To build the PicoSAT dependency, run
-//     $ cd picosat; make picosat.o
-// No need to run picosat/configure.
+// picosat/picosat.o must exist to build this file. See README.md.
 
 // #cgo CFLAGS:-I picosat
 // #cgo LDFLAGS: -l picosat.o -L picosat

@@ -9,9 +9,9 @@ package pigosat
 // #cgo LDFLAGS: -l picosat -L picosat
 // #include "picosat.h"
 import "C"
-import "time"
 import "fmt"
 import "sync"
+import "time"
 
 var Version = SemanticVersion{0, 1, 0, "", 0}
 
@@ -38,7 +38,7 @@ const (
 // Struct Pigosat must be created with NewPigosat and destroyed with DelPigosat.
 type Pigosat struct {
 	// Pointer to the underlying C struct.
-	p *C.PicoSAT
+	p    *C.PicoSAT
 	lock *sync.RWMutex
 }
 

@@ -13,12 +13,12 @@ type SemanticVersion struct {
 	step uint
 }
 
-func (v SemanticVersion) Major() uint { return v.major }
-func (v SemanticVersion) Minor() uint { return v.minor }
-func (v SemanticVersion) Patch() uint { return v.patch }
+func (v SemanticVersion) Major() uint        { return v.major }
+func (v SemanticVersion) Minor() uint        { return v.minor }
+func (v SemanticVersion) Patch() uint        { return v.patch }
 func (v SemanticVersion) Prerelease() string { return v.prerelease }
-func (v SemanticVersion) Step() uint { return v.step }
-func (v SemanticVersion) IsStable() bool { return v.prerelease == "" }
+func (v SemanticVersion) Step() uint         { return v.step }
+func (v SemanticVersion) IsStable() bool     { return v.prerelease == "" }
 
 func (v SemanticVersion) String() string {
 	var prerelease string

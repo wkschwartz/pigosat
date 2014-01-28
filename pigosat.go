@@ -10,6 +10,7 @@ package pigosat
 // #include "picosat.h"
 import "C"
 import "fmt"
+import "runtime"
 import "sync"
 import "time"
 
@@ -53,12 +54,16 @@ func NewPigosat(propagation_limit uint64) *Pigosat {
 	if propagation_limit > 0 {
 		C.picosat_set_propagation_limit(p, C.ulonglong(propagation_limit))
 	}
-	return &Pigosat{p: p, lock: new(sync.RWMutex)}
+	pgo := &Pigosat{p: p, lock: new(sync.RWMutex)}
+	runtime.SetFinalizer(pgo, (*Pigosat).Delete)
+	return pgo
 }
 
-// DelPigosat must be called on every Pigosat instance before each goes out of
-// scope or the program ends, or else the program will leak memory. Once
-// DelPigosat has been called on an instance, it cannot be used again.
+// Delete may be called when you are done using a Pigosat instance, after which
+// it cannot be used again. However, you only need to call this method if the
+// instance's finalizer was reset using runtime.SetFinalizer (if you're not
+// sure, it's always safe to call Delete again). Most users will not need this
+// method.
 func (p *Pigosat) Delete() {
 	if p == nil || p.p == nil {
 		return

@@ -46,10 +46,11 @@ Use
 ---
 
 After completing the building and installation steps above, importation should
-work as usual. Create a `Pigosat` object `p` and use its methods. Because of the
-C-language PicoSAT component of PiGoSAT, you must explicitly free `p` when you
-are done using `p`, and you will not be able to use `p` thereafter. The best
-practice if you are using `p` all within one function is to use `defer`.
+work as usual. Create a `Pigosat` object `p` and use its methods. Even though
+PicoSAT is written in C, PiGoSAT manages memory for you using
+`runtime.SetFinalizer`. (If you reset a `Pigosat` instance `p`'s finalizer, you
+will have to call `p.Delete` explicitly, which is best done with `defer` right
+after reseting the finalizer; most users will not need to worry about this.)
 
 Designing your model is beyond the scope of this document, but Googling
 "satisfiability problem", "conjunctive normal form", and "DIMACS" are good
@@ -65,7 +66,6 @@ package main
 import "pigosat"
 func main() {
 	p := pigosat.NewPigosat(0)
-	defer p.Delete()
 	p.AddClauses([][]int32{{1, 2}, {-2}})
 	status, solution := p.Solve()
 	// Now status should equal pigosat.Satisfiable and solution should be

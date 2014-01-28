@@ -139,7 +139,6 @@ func TestFormulas(t *testing.T) {
 		p.AddClauses(ft.formula)
 		status, solution = p.Solve()
 		wasExpected(t, i, p, &ft, status, solution)
-		p.Delete()
 	}
 }
 
@@ -159,11 +158,9 @@ func TestPropLimit(t *testing.T) {
 				t.Errorf("Propagation limit %d had no effect on formula 0",
 					limit)
 			}
-			p.Delete()
 			continue
 		}
 		wasExpected(t, 0, p, &ft, status, solution)
-		p.Delete()
 	}
 }
 
@@ -202,7 +199,6 @@ func TestPicosatVersion(t *testing.T) {
 // This is the example from the README.
 func Example_readme() {
 	p := NewPigosat(0)
-	defer p.Delete()
 	p.AddClauses([][]int32{{1, 2}, {-2}})
 	fmt.Println("")
 	fmt.Printf("# variables == %d\n", p.Variables())

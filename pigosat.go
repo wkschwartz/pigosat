@@ -14,7 +14,7 @@ import "runtime"
 import "sync"
 import "time"
 
-var Version = SemanticVersion{0, 2, 0, "", 0}
+var Version = SemanticVersion{0, 2, 1, "", 0}
 
 // PicosatVersion returns the version string from the underlying Picosat
 // library.
@@ -36,7 +36,8 @@ const (
 	Unsatisfiable = 20
 )
 
-// Struct Pigosat must be created with NewPigosat and destroyed with DelPigosat.
+// Struct Pigosat must be created with NewPigosat and stores the state of the
+// solver.
 type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT

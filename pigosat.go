@@ -1,6 +1,12 @@
 // Copyright William Schwartz 2014. See the LICENSE file for more information.
 
 // Package pigosat is a Go binding for the PicoSAT satisfiability solver.
+//
+// Designing your model is beyond the scope of this document, but Googling
+// "satisfiability problem", "conjunctive normal form", and "DIMACS" are good
+// places to start. Once you have your model, create a Pigosat instance p with
+// pigosat.NewPigosat, add the model to the instance with p.AddClauses, and
+// solve with p.Solve.
 package pigosat
 
 // picosat/libpicosat.a must exist to build this file. See README.md.
@@ -14,7 +20,7 @@ import "runtime"
 import "sync"
 import "time"
 
-var Version = SemanticVersion{0, 2, 1, "", 0}
+var Version = SemanticVersion{0, 2, 2, "", 0}
 
 // PicosatVersion returns the version string from the underlying Picosat
 // library.

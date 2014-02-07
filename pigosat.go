@@ -225,6 +225,20 @@ func (p *Pigosat) AddClauses(clauses [][]int32) {
 	}
 }
 
+// blocksol adds the inverse of the solution to the clauses.
+// This private method does not acquire the lock or check if p is nil.
+func (p *Pigosat) blocksol(sol []bool) {
+	n := int(C.picosat_variables(p.p))
+	for i := 1; i <= n; i++ {
+		if sol[i] {
+			C.picosat_add(p.p, C.int(-i))
+		} else {
+			C.picosat_add(p.p, C.int(i))
+		}
+	}
+	C.picosat_add(p.p, 0);
+}
+
 // Solve the formula and return the status of the solution: one of the constants
 // Unsatisfiable, Satisfiable, or Unknown. If satisfiable, return a slice
 // indexed by the variables in the formula (so the first element is always
@@ -260,18 +274,4 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 	}
 	p.blocksol(solution)
 	return
-}
-
-// blocksol adds the inverse of the solution to the clauses.
-// This private method does not acquire the lock or check if p is nil.
-func (p *Pigosat) blocksol(sol []bool) {
-	n := int(C.picosat_variables(p.p))
-	for i := 1; i <= n; i++ {
-		if sol[i] {
-			C.picosat_add(p.p, C.int(-i))
-		} else {
-			C.picosat_add(p.p, C.int(i))
-		}
-	}
-	C.picosat_add(p.p, 0);
 }

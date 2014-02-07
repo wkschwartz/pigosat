@@ -242,15 +242,15 @@ func TestPropLimit(t *testing.T) {
 // Test Option.OutputFile, Option.Verbosity, and Option.Prefix all at once.
 func TestOutput(t *testing.T) {
 	tmp, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer func() {
 		tmp.Close()
 		if err := os.Remove(tmp.Name()); err != nil {
 			t.Error(err)
 		}
 	}()
-	if err != nil {
-		t.Fatal(err)
-	}
 	ft := formulaTests[0]
 	prefix := "asdf "
 	p, err := NewPigosat(&Options{Verbosity: 1, OutputFile: tmp, Prefix: prefix})

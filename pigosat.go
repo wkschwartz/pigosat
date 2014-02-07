@@ -148,6 +148,10 @@ func (p *Pigosat) Delete() {
 	// void picosat_reset (PicoSAT *);
 	C.picosat_reset(p.p)
 	p.p = nil
+	// No longer need a finalizer. See file.close (not File.close) in the os
+	// package: http://golang.org/src/pkg/os/file_unix.go#L115 (sorry if the
+	// line number ends up wrong).
+	runtime.SetFinalizer(p, nil)
 }
 
 // Variables returns the number of variables in the formula: The m in the DIMACS

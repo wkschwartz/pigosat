@@ -210,71 +210,85 @@ func TestBlockSolution(t *testing.T) {
 
 // Also cribbed from Pycosat
 func TestPropLimit(t *testing.T) {
-	var p *Pigosat
-	var status int
-	var solution []bool
-	ft := formulaTests[0]
-	var limit uint64
-	for limit = 1; limit < 20; limit++ {
-		p, _ = NewPigosat(&Options{PropagationLimit: limit})
-		p.AddClauses(ft.formula)
-		status, solution = p.Solve()
-		if limit < 8 {
-			if status != Unknown {
-				t.Errorf("Propagation limit %d had no effect on formula 0",
-					limit)
-			}
+	for i, ft := range formulaTests {
+		if ft.status != Satisfiable || ft.onlyOne {
 			continue
 		}
-		wasExpected(t, 0, p, &ft, status, solution)
+		seenUn, seenSat := false, false
+		for limit := uint64(1); limit < 20; limit++ {
+			p, _ := NewPigosat(&Options{PropagationLimit: limit})
+			p.AddClauses(ft.formula)
+			status, solution := p.Solve()
+			if status == Unknown {
+				seenUn = true
+				if seenSat {
+					t.Errorf("Test %d: Status unexpectedly changed back to "+
+						"Unknown at limit=%d", i, limit)
+				}
+			} else if status == Satisfiable {
+				seenSat = true
+				if !seenUn {
+					t.Errorf("Test %d: Propagation limit %d had no effect",
+						i, limit)
+				}
+				wasExpected(t, i, p, &ft, status, solution)
+			} else {
+				t.Error("unreachable")
+			}
+		}
+		if !seenUn || !seenSat {
+			t.Errorf("Test %d: seenUn=%v, seenSat=%v", i, seenUn, seenSat)
+		}
 	}
 }
 
 // Test Option.OutputFile, Option.Verbosity, and Option.Prefix all at once.
 func TestOutput(t *testing.T) {
-	tmp, err := ioutil.TempFile("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		tmp.Close()
-		if err := os.Remove(tmp.Name()); err != nil {
-			t.Error(err)
+	for i, ft := range formulaTests {
+		tmp, err := ioutil.TempFile("", "")
+		if err != nil {
+			t.Fatal(err)
 		}
-	}()
-	ft := formulaTests[0]
-	prefix := "asdf "
-	p, err := NewPigosat(&Options{Verbosity: 1, OutputFile: tmp, Prefix: prefix})
-	if err != nil {
-		t.Fatal(err)
-	}
-	p.AddClauses(ft.formula)
-	_, _ = p.Solve()
-	// Now we make sure the file was written.
-	buf := make([]byte, 5)
-	if n, err := tmp.ReadAt(buf, 0); err != nil {
-		// Something wrong with either Verbosity or OutputFile
-		t.Errorf("Output file not written to: bytes read=%d, err=%v", n, err)
-	}
-	if s := string(buf); s != prefix {
-		t.Errorf(`Wrong perfix: expected "%s" but got "%s"`, prefix, s)
+		defer func() {
+			tmp.Close()
+			if err := os.Remove(tmp.Name()); err != nil {
+				t.Error(err)
+			}
+		}()
+		prefix := fmt.Sprintf("asdf%x ", i)
+		p, err := NewPigosat(&Options{Verbosity: 1, OutputFile: tmp, Prefix: prefix})
+		if err != nil {
+			t.Fatal(err)
+		}
+		p.AddClauses(ft.formula)
+		_, _ = p.Solve()
+		// Now we make sure the file was written.
+		buf := make([]byte, len(prefix))
+		if n, err := tmp.ReadAt(buf, 0); err != nil {
+			// Something wrong with either Verbosity or OutputFile
+			t.Errorf("Output file not written to: bytes read=%d, err=%v", n, err)
+		}
+		if s := string(buf); s != prefix {
+			t.Errorf(`Wrong perfix: expected "%s" but got "%s"`, prefix, s)
+		}
 	}
 }
 
 // Without MeasureAllCalls, AddClasuses is not meausured. With it, it is.
 func TestMeasureAllCalls(t *testing.T) {
-	ft := formulaTests[9]
-	p, _ := NewPigosat(nil)
-	p.AddClauses(ft.formula)
-	if p.Seconds() != 0 {
-		t.Errorf("Seconds without MeasureAllCalls should not measure "+
-			"AddClauses, but p.Seconds() == %v", p.Seconds())
-	}
-	p, _ = NewPigosat(&Options{MeasureAllCalls: true})
-	p.AddClauses(ft.formula)
-	if p.Seconds() == 0 {
-		t.Errorf("Seconds with MeasureAllCalls should measure "+
-			"AddClauses, but p.Seconds() == %v", p.Seconds())
+	for i, ft := range formulaTests {
+		p, _ := NewPigosat(nil)
+		p.AddClauses(ft.formula)
+		if p.Seconds() != 0 {
+			t.Errorf("Test %d: Seconds without MeasureAllCalls should not "+
+				"measure AddClauses, but p.Seconds() == %v", i, p.Seconds())
+		}
+		p, _ = NewPigosat(&Options{MeasureAllCalls: true})
+		p.AddClauses(ft.formula)
+		if p.Seconds() == 0 {
+			t.Errorf("Test %d: Seconds with MeasureAllCalls should measure "+
+				"AddClauses, but p.Seconds() == %v", i, p.Seconds())
+		}
 	}
 }
 

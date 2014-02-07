@@ -236,7 +236,7 @@ func (p *Pigosat) blocksol(sol []bool) {
 			C.picosat_add(p.p, C.int(i))
 		}
 	}
-	C.picosat_add(p.p, 0);
+	C.picosat_add(p.p, 0)
 }
 
 // Solve the formula and return the status of the solution: one of the constants

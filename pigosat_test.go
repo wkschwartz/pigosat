@@ -60,7 +60,7 @@ type formulaTest struct {
 	clauses   int // count
 	status    int
 	expected  []bool // solution
-	onlyOne   bool // No solution other than `expected` could satisfy
+	onlyOne   bool   // No solution other than `expected` could satisfy
 }
 
 var formulaTests = []formulaTest{
@@ -132,7 +132,7 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest, status int,
 	if ft.status == Satisfiable {
 		offset = 1
 	}
-	if p.AddedOriginalClauses() != ft.clauses + offset {
+	if p.AddedOriginalClauses() != ft.clauses+offset {
 		t.Errorf("Test %d: Exepcted %d clauses, got %d", i, ft.clauses,
 			p.AddedOriginalClauses())
 	}

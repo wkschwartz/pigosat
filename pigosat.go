@@ -275,3 +275,21 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 	p.blocksol(solution)
 	return
 }
+
+// BlockSolution adds a clause to the formula ruling out a given solution. It is
+// a no-op if p is nil and returns an error if the solution is the wrong
+// length. There is no need to call BlockSolution after calling Pigosat.Solve,
+// which calls it automatically for every Satisfiable solution.
+func (p *Pigosat) BlockSolution(solution []bool) error {
+	if p == nil || p.p == nil {
+		return nil
+	}
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	if n := int(C.picosat_variables(p.p)); len(solution) != n+1 {
+		return fmt.Errorf("solution length %d, but have %d variables",
+			len(solution), n)
+	}
+	p.blocksol(solution)
+	return nil
+}

@@ -180,6 +180,43 @@ func TestIterSolve(t *testing.T) {
 	}
 }
 
+func TestBlockSolution(t *testing.T) {
+	var p *Pigosat
+	var solution []bool
+	var err error
+	for i, ft := range formulaTests {
+		p, _ = NewPigosat(nil)
+
+		// Test bad inputs: one too short (remember sol[0] is always blank)
+		solution = make([]bool, p.Variables())
+		if err = p.BlockSolution(solution); err == nil {
+			t.Errorf("Test %d: Expected error when solution too short")
+		}
+		// Now it'll be one too long
+		solution = append(solution, true)
+		solution = append(solution, true)
+		if err = p.BlockSolution(solution); err == nil {
+			t.Errorf("Test %d: Expected error when solution too long")
+		}
+
+		// Solve should not return ft.expected if it's blocked
+		if ft.status == Satisfiable && !ft.onlyOne {
+			p.AddClauses(ft.formula)
+			if err = p.BlockSolution(ft.expected); err != nil {
+				t.Errorf("Test %d: Unexpected error from BlockSolution: %v", i, err)
+			}
+			_, solution = p.Solve()
+			if !evaluate(ft.formula, solution) {
+				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
+					i, solution, ft.formula)
+			}
+			if equal(solution, ft.expected) {
+				t.Errorf("Test %d: Duplicate solution: %v", i, solution)
+			}
+		}
+	}
+}
+
 // Also cribbed from Pycosat
 func TestPropLimit(t *testing.T) {
 	var p *Pigosat
@@ -281,6 +318,10 @@ func TestNil(t *testing.T) {
 		if status, solution := p.Solve(); status != NotReady || solution != nil {
 			t.Errorf("Test %s: Expected status %d and nil solution, got %d and %v",
 				name, NotReady, status, solution)
+		}
+		if err := p.BlockSolution([]bool{}); err != nil {
+			t.Errorf("Test %s: Expected no-op BlockSolution, got error: %v",
+				name, err)
 		}
 	}
 }

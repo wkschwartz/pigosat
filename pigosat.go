@@ -23,7 +23,7 @@ import "os"
 import "syscall"
 import "unsafe"
 
-var Version = SemanticVersion{0, 2, 2, "", 0}
+var Version = SemanticVersion{0, 3, 0, "", 0}
 
 // PicosatVersion returns the version string from the underlying Picosat
 // library.

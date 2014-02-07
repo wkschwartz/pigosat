@@ -19,6 +19,9 @@ import "fmt"
 import "runtime"
 import "sync"
 import "time"
+import "os"
+import "syscall"
+import "unsafe"
 
 var Version = SemanticVersion{0, 2, 2, "", 0}
 
@@ -50,20 +53,85 @@ type Pigosat struct {
 	lock *sync.RWMutex
 }
 
+// Settings that must be decided before adding any clauses. Zero values indicate
+// default behavior.
+type Options struct {
+	// Set PropagationLimit to a positive value to limit how long the solver
+	// tries to find a solution.
+	PropagationLimit uint64
+
+	// Default (nil value) output file stdout
+	OutputFile       *os.File
+
+	/* Set verbosity level. A verbosity level of 1 and above prints more and
+	* more detailed progress reports on the output file, set by
+	* 'picosat_set_output'. Verbose messages are prefixed with the string set
+	* by 'picosat_set_prefix'.
+	*/
+	Verbosity        uint
+
+	// Set the prefix used for printing verbose messages and statistics.
+	// Default is "c ".
+	Prefix           string
+
+	/* Measure all time spent in all calls in the solver.  By default only the
+	 * time spent in 'picosat_sat' is measured.  Enabling this function may for
+	 * instance triple the time needed to add large CNFs, since every call to
+	 * 'picosat_add' will trigger a call to 'getrusage'.
+	 */
+	MeasureAllCalls  bool
+}
+
+// cfdopen returns a C-level FILE*. mode should be as described in fdopen(3).
+func cfdopen(file *os.File, mode string) (*C.FILE, error) {
+	cmode := C.CString(mode)
+	defer C.free(unsafe.Pointer(cmode))
+	// FILE * fdopen(int fildes, const char *mode);
+	cfile, err := C.fdopen(C.int(file.Fd()), cmode)
+	if err != nil {
+		return nil, err
+	}
+	if cfile == nil {
+		return nil, syscall.EINVAL
+	}
+	return cfile, nil
+}
+
 // NewPigosat returns a new Pigosat instance, ready to have literals added to
-// it. Set propogation_limit to a positive value to limit how long the solver
-// tries to find a solution.
-func NewPigosat(propagation_limit uint64) *Pigosat {
+// it. The error return value need only be checked if the OutputFile option is
+// non-nil.
+func NewPigosat(options *Options) (*Pigosat, error) {
 	// PicoSAT * picosat_init (void);
 	p := C.picosat_init()
-	// void picosat_set_propagation_limit (PicoSAT *, unsigned long long limit);
-	// Must be called after init, before solve, so we do it in the constructor.
-	if propagation_limit > 0 {
-		C.picosat_set_propagation_limit(p, C.ulonglong(propagation_limit))
+	if options != nil {
+		// void picosat_set_propagation_limit (PicoSAT *, unsigned long long limit);
+		C.picosat_set_propagation_limit(p, C.ulonglong(options.PropagationLimit))
+		if options.OutputFile != nil {
+			cfile, err := cfdopen(options.OutputFile, "a")
+			if err != nil {
+				C.picosat_reset(p)
+				return nil, &os.PathError{Op: "fdopen",
+					Path: options.OutputFile.Name(), Err: err}
+			}
+			// void picosat_set_output (PicoSAT *, FILE *);
+			C.picosat_set_output(p, cfile)
+		}
+		// void picosat_set_verbosity (PicoSAT *, int new_verbosity_level);
+		C.picosat_set_verbosity(p, C.int(options.Verbosity))
+		if options.Prefix != "" {
+			// void picosat_set_prefix (PicoSAT *, const char *);
+			prefix := C.CString(options.Prefix)
+			defer C.free(unsafe.Pointer(prefix))
+			C.picosat_set_prefix(p, prefix)
+		}
+		if options.MeasureAllCalls {
+			// void picosat_measure_all_calls (PicoSAT *);
+			C.picosat_measure_all_calls(p)
+		}
 	}
 	pgo := &Pigosat{p: p, lock: new(sync.RWMutex)}
 	runtime.SetFinalizer(pgo, (*Pigosat).Delete)
-	return pgo
+	return pgo, nil
 }
 
 // Delete may be called when you are done using a Pigosat instance, after which

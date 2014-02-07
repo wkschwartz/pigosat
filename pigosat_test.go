@@ -5,6 +5,8 @@ package pigosat
 import "testing"
 import "time"
 import "fmt"
+import "io/ioutil"
+import "os"
 
 // abs takes the absolute value of an int32 and casts it to int.
 func abs(x int32) int {
@@ -135,7 +137,7 @@ func TestFormulas(t *testing.T) {
 	var status int
 	var solution []bool
 	for i, ft := range formulaTests {
-		p = NewPigosat(0)
+		p, _ = NewPigosat(nil)
 		p.AddClauses(ft.formula)
 		status, solution = p.Solve()
 		wasExpected(t, i, p, &ft, status, solution)
@@ -150,7 +152,7 @@ func TestPropLimit(t *testing.T) {
 	ft := formulaTests[0]
 	var limit uint64
 	for limit = 1; limit < 20; limit++ {
-		p = NewPigosat(limit)
+		p, _ = NewPigosat(&Options{PropagationLimit: limit})
 		p.AddClauses(ft.formula)
 		status, solution = p.Solve()
 		if limit < 8 {
@@ -164,10 +166,68 @@ func TestPropLimit(t *testing.T) {
 	}
 }
 
+// Test Option.OutputFile, Option.Verbosity, and Option.Prefix all at once.
+func TestOutput(t *testing.T) {
+	tmp, err := ioutil.TempFile("", "")
+	defer func() {
+		tmp.Close()
+		if err := os.Remove(tmp.Name()); err != nil {
+			t.Error(err)
+		}
+	}()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ft := formulaTests[0]
+	prefix := "asdf "
+	p, err := NewPigosat(&Options{Verbosity: 1, OutputFile: tmp, Prefix: prefix})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.AddClauses(ft.formula)
+	_, _ = p.Solve()
+	// Now we make sure the file was written.
+	if err := tmp.Sync(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tmp.Seek(0, 0); err != nil {
+		t.Fatal(err)
+	}
+	buf := make([]byte, 5)
+	if n, err := tmp.Read(buf); err != nil {
+		if n == 0 {
+			// Something wrong with either Verbosity or OutputFile
+			t.Error("Output file not written to")
+		} else {
+			t.Fatal(err)
+		}
+	}
+	if s := string(buf); s != prefix {
+		t.Errorf(`Wrong perfix: expected "%s" but got "%s"`, prefix, s)
+	}
+}
+
+// Without MeasureAllCalls, AddClasuses is not meausured. With it, it is.
+func TestMeasureAllCalls(t *testing.T) {
+	ft := formulaTests[9]
+	p, _ := NewPigosat(nil)
+	p.AddClauses(ft.formula)
+	if p.Seconds() != 0 {
+		t.Errorf("Seconds without MeasureAllCalls should not measure " +
+			"AddClauses, but p.Seconds() == %v", p.Seconds())
+	}
+	p, _ = NewPigosat(&Options{MeasureAllCalls: true})
+	p.AddClauses(ft.formula)
+	if p.Seconds() == 0 {
+		t.Errorf("Seconds with MeasureAllCalls should measure " +
+			"AddClauses, but p.Seconds() == %v", p.Seconds())
+	}
+}
+
 // Test that nil method calls are no ops
 func TestNil(t *testing.T) {
 	var a, b *Pigosat
-	b = NewPigosat(0)
+	b, _ = NewPigosat(nil)
 	b.Delete()
 	for name, p := range map[string]*Pigosat{"uninit": a, "deleted": b} {
 		// No panicking
@@ -198,7 +258,7 @@ func TestPicosatVersion(t *testing.T) {
 
 // This is the example from the README.
 func Example_readme() {
-	p := NewPigosat(0)
+	p, _ := NewPigosat(nil)
 	p.AddClauses([][]int32{{1, 2}, {-2}})
 	fmt.Println("")
 	fmt.Printf("# variables == %d\n", p.Variables())

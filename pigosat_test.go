@@ -60,6 +60,7 @@ type formulaTest struct {
 	clauses   int // count
 	status    int
 	expected  []bool // solution
+	onlyOne   bool // No solution other than `expected` could satisfy
 }
 
 var formulaTests = []formulaTest{
@@ -68,39 +69,40 @@ var formulaTests = []formulaTest{
 	// commit d81df1e in test_pycosat.py.
 	0: {[][]int32{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
 		5, 3, Satisfiable,
-		[]bool{false, true, false, false, false, true}},
+		[]bool{false, true, false, false, false, true}, false},
 	1: {[][]int32{{-1}, {1}},
 		1, 2, Unsatisfiable,
-		nil},
+		nil, false},
 	2: {[][]int32{{-1, 2}, {-1, -2}, {1, -2}},
 		2, 3, Satisfiable,
-		[]bool{false, false, false}},
+		[]bool{false, false, false}, true},
 	// For testing that empty clauses are skipped and 0s end clauses
 	3: {[][]int32{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
 		5, 3, Satisfiable,
-		[]bool{false, true, false, false, false, true}},
+		[]bool{false, true, false, false, false, true}, false},
 	// Armin Biere, "Using High Performance SAT and QBF Solvers", presentation
 	// given 2011-01-24, pp. 23-48,
 	// http://fmv.jku.at/biere/talks/Biere-TPTPA11.pdf
 	// From "DIMACS example 1"
 	4: {[][]int32{{-2}, {-1, -3}, {1, 2}, {2, 3}},
-		3, 4, Unsatisfiable, nil},
+		3, 4, Unsatisfiable, nil, false},
 	// From "Satisfying Assignments Example 2"
 	5: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}},
 		2, 3, Satisfiable,
-		[]bool{false, true, true}},
+		[]bool{false, true, true}, true},
 	6: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}, {-1}},
-		2, 4, Unsatisfiable, nil},
+		2, 4, Unsatisfiable, nil, false},
 	7: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}, {-2}},
-		2, 4, Unsatisfiable, nil},
+		2, 4, Unsatisfiable, nil, false},
 	// From "ex3.cnf"
 	8: {[][]int32{{1, 2, 3}, {1, 2, -3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
 		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {1, 4}},
-		6, 10, Unsatisfiable, nil},
+		6, 10, Unsatisfiable, nil, false},
 	// From "ex4.cnf"
 	9: {[][]int32{{1, 2, 3}, {1, 2 - 3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
 		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {-1, 4}, {-1, -4}},
-		6, 11, Satisfiable, []bool{false, false, false, true, true, false, false}},
+		6, 11, Satisfiable,
+		[]bool{false, false, false, true, true, false, false}, false},
 }
 
 // Ensure our expected solutions are correct.
@@ -125,7 +127,12 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest, status int,
 		t.Errorf("Test %d: Expected %d variables, got %d", i, ft.variables,
 			p.Variables())
 	}
-	if p.AddedOriginalClauses() != ft.clauses {
+	// If satisfiable, add 1 because solving adds a clause
+	offset := 0
+	if ft.status == Satisfiable {
+		offset = 1
+	}
+	if p.AddedOriginalClauses() != ft.clauses + offset {
 		t.Errorf("Test %d: Exepcted %d clauses, got %d", i, ft.clauses,
 			p.AddedOriginalClauses())
 	}
@@ -143,6 +150,33 @@ func TestFormulas(t *testing.T) {
 		p.AddClauses(ft.formula)
 		status, solution = p.Solve()
 		wasExpected(t, i, p, &ft, status, solution)
+	}
+}
+
+func TestIterSolve(t *testing.T) {
+	var p *Pigosat
+	var status, count int
+	var this, last []bool // solutions
+	for i, ft := range formulaTests {
+		p, _ = NewPigosat(nil)
+		p.AddClauses(ft.formula)
+		count = 0
+		for status, this = p.Solve(); status == Satisfiable; status, this = p.Solve() {
+			if !evaluate(ft.formula, this) {
+				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
+					i, this, ft.formula)
+			}
+			if equal(this, last) {
+				t.Errorf("Test %d: Duplicate solution: %v", i, this)
+			}
+			last = this
+			if count++; count > 10 {
+				break // So we don't loop for ever
+			}
+		}
+		if count < 2 && ft.status == Satisfiable && !ft.onlyOne {
+			t.Errorf("Test %d: Only one solution", i)
+		}
 	}
 }
 

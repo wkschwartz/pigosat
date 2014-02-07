@@ -48,7 +48,7 @@ const (
 )
 
 // Struct Pigosat must be created with NewPigosat and stores the state of the
-// solver.
+// solver. Once initialized by NewPigosat, it is safe for concurrent use.
 type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT
@@ -228,7 +228,11 @@ func (p *Pigosat) AddClauses(clauses [][]int32) {
 // Solve the formula and return the status of the solution: one of the constants
 // Unsatisfiable, Satisfiable, or Unknown. If satisfiable, return a slice
 // indexed by the variables in the formula (so the first element is always
-// false).
+// false). Solve can be used like an iterator, yielding a new solution until
+// there are no more feasible solutions:
+//    for status, solution := p.Solve(); status == Satisfiable; status, solution = p.Solve {
+//        // Do stuff with status, solution
+//    }
 func (p *Pigosat) Solve() (status int, solution []bool) {
 	if p == nil || p.p == nil {
 		return NotReady, nil
@@ -254,5 +258,20 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 			panic(fmt.Errorf("Variable %d was assigned value 0", i))
 		}
 	}
+	p.blocksol(solution)
 	return
+}
+
+// blocksol adds the inverse of the solution to the clauses.
+// This private method does not acquire the lock or check if p is nil.
+func (p *Pigosat) blocksol(sol []bool) {
+	n := int(C.picosat_variables(p.p))
+	for i := 1; i <= n; i++ {
+		if sol[i] {
+			C.picosat_add(p.p, C.int(-i))
+		} else {
+			C.picosat_add(p.p, C.int(i))
+		}
+	}
+	C.picosat_add(p.p, 0);
 }

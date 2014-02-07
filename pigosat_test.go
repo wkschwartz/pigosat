@@ -142,25 +142,21 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest, status int,
 }
 
 func TestFormulas(t *testing.T) {
-	var p *Pigosat
-	var status int
-	var solution []bool
 	for i, ft := range formulaTests {
-		p, _ = NewPigosat(nil)
+		p, _ := NewPigosat(nil)
 		p.AddClauses(ft.formula)
-		status, solution = p.Solve()
+		status, solution := p.Solve()
 		wasExpected(t, i, p, &ft, status, solution)
 	}
 }
 
 func TestIterSolve(t *testing.T) {
-	var p *Pigosat
-	var status, count int
+	var status int
 	var this, last []bool // solutions
 	for i, ft := range formulaTests {
-		p, _ = NewPigosat(nil)
+		p, _ := NewPigosat(nil)
 		p.AddClauses(ft.formula)
-		count = 0
+		count := 0
 		for status, this = p.Solve(); status == Satisfiable; status, this = p.Solve() {
 			if !evaluate(ft.formula, this) {
 				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
@@ -179,28 +175,25 @@ func TestIterSolve(t *testing.T) {
 }
 
 func TestBlockSolution(t *testing.T) {
-	var p *Pigosat
-	var solution []bool
-	var err error
 	for i, ft := range formulaTests {
-		p, _ = NewPigosat(nil)
+		p, _ := NewPigosat(nil)
 
 		// Test bad inputs: one too short (remember sol[0] is always blank)
-		solution = make([]bool, p.Variables())
-		if err = p.BlockSolution(solution); err == nil {
+		solution := make([]bool, p.Variables())
+		if err := p.BlockSolution(solution); err == nil {
 			t.Errorf("Test %d: Expected error when solution too short")
 		}
 		// Now it'll be one too long
 		solution = append(solution, true)
 		solution = append(solution, true)
-		if err = p.BlockSolution(solution); err == nil {
+		if err := p.BlockSolution(solution); err == nil {
 			t.Errorf("Test %d: Expected error when solution too long")
 		}
 
 		// Solve should not return ft.expected if it's blocked
 		if ft.status == Satisfiable && !ft.onlyOne {
 			p.AddClauses(ft.formula)
-			if err = p.BlockSolution(ft.expected); err != nil {
+			if err := p.BlockSolution(ft.expected); err != nil {
 				t.Errorf("Test %d: Unexpected error from BlockSolution: %v", i, err)
 			}
 			_, solution = p.Solve()

@@ -61,25 +61,25 @@ type Options struct {
 	PropagationLimit uint64
 
 	// Default (nil value) output file stdout
-	OutputFile       *os.File
+	OutputFile *os.File
 
 	/* Set verbosity level. A verbosity level of 1 and above prints more and
 	* more detailed progress reports on the output file, set by
 	* 'picosat_set_output'. Verbose messages are prefixed with the string set
 	* by 'picosat_set_prefix'.
-	*/
-	Verbosity        uint
+	 */
+	Verbosity uint
 
 	// Set the prefix used for printing verbose messages and statistics.
 	// Default is "c ".
-	Prefix           string
+	Prefix string
 
 	/* Measure all time spent in all calls in the solver.  By default only the
 	 * time spent in 'picosat_sat' is measured.  Enabling this function may for
 	 * instance triple the time needed to add large CNFs, since every call to
 	 * 'picosat_add' will trigger a call to 'getrusage'.
 	 */
-	MeasureAllCalls  bool
+	MeasureAllCalls bool
 }
 
 // cfdopen returns a C-level FILE*. mode should be as described in fdopen(3).

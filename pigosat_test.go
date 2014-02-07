@@ -213,13 +213,13 @@ func TestMeasureAllCalls(t *testing.T) {
 	p, _ := NewPigosat(nil)
 	p.AddClauses(ft.formula)
 	if p.Seconds() != 0 {
-		t.Errorf("Seconds without MeasureAllCalls should not measure " +
+		t.Errorf("Seconds without MeasureAllCalls should not measure "+
 			"AddClauses, but p.Seconds() == %v", p.Seconds())
 	}
 	p, _ = NewPigosat(&Options{MeasureAllCalls: true})
 	p.AddClauses(ft.formula)
 	if p.Seconds() == 0 {
-		t.Errorf("Seconds with MeasureAllCalls should measure " +
+		t.Errorf("Seconds with MeasureAllCalls should measure "+
 			"AddClauses, but p.Seconds() == %v", p.Seconds())
 	}
 }

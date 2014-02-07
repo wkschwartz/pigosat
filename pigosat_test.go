@@ -133,7 +133,7 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest, status int,
 		offset = 1
 	}
 	if p.AddedOriginalClauses() != ft.clauses+offset {
-		t.Errorf("Test %d: Exepcted %d clauses, got %d", i, ft.clauses,
+		t.Errorf("Test %d: Exepcted %d clauses, got %d", i, ft.clauses + offset,
 			p.AddedOriginalClauses())
 	}
 	if s := p.Seconds(); s <= 0 || s > time.Millisecond {

@@ -15,13 +15,15 @@ package pigosat
 // #cgo LDFLAGS: -l picosat -L picosat
 // #include "picosat.h"
 import "C"
-import "fmt"
-import "runtime"
-import "sync"
-import "time"
-import "os"
-import "syscall"
-import "unsafe"
+import (
+	"fmt"
+	"os"
+	"runtime"
+	"sync"
+	"syscall"
+	"time"
+	"unsafe"
+)
 
 var Version = SemanticVersion{0, 3, 0, "", 0}
 

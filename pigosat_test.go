@@ -2,11 +2,13 @@
 
 package pigosat
 
-import "testing"
-import "time"
-import "fmt"
-import "io/ioutil"
-import "os"
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"testing"
+	"time"
+)
 
 // abs takes the absolute value of an int32 and casts it to int.
 func abs(x int32) int {

@@ -260,20 +260,10 @@ func TestOutput(t *testing.T) {
 	p.AddClauses(ft.formula)
 	_, _ = p.Solve()
 	// Now we make sure the file was written.
-	if err := tmp.Sync(); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := tmp.Seek(0, 0); err != nil {
-		t.Fatal(err)
-	}
 	buf := make([]byte, 5)
-	if n, err := tmp.Read(buf); err != nil {
-		if n == 0 {
-			// Something wrong with either Verbosity or OutputFile
-			t.Error("Output file not written to")
-		} else {
-			t.Fatal(err)
-		}
+	if n, err := tmp.ReadAt(buf, 0); err != nil {
+		// Something wrong with either Verbosity or OutputFile
+		t.Errorf("Output file not written to: bytes read=%d, err=%v", n, err)
 	}
 	if s := string(buf); s != prefix {
 		t.Errorf(`Wrong perfix: expected "%s" but got "%s"`, prefix, s)

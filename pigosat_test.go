@@ -170,9 +170,7 @@ func TestIterSolve(t *testing.T) {
 				t.Errorf("Test %d: Duplicate solution: %v", i, this)
 			}
 			last = this
-			if count++; count > 10 {
-				break // So we don't loop for ever
-			}
+			count++
 		}
 		if count < 2 && ft.status == Satisfiable && !ft.onlyOne {
 			t.Errorf("Test %d: Only one solution", i)

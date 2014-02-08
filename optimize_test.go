@@ -5,9 +5,8 @@ import "testing"
 // TestMinimize will test optimal values from `from` to `to`.
 const (
 	from = -32
-	to = -from
+	to   = -from
 )
-
 
 func init() {
 	if from >= to {
@@ -21,12 +20,12 @@ type parameters struct {
 
 type arguments struct {
 	k, status int
-	solution []bool
+	solution  []bool
 }
 
 type minimizer struct {
-	t *testing.T
-	args chan arguments
+	t      *testing.T
+	args   chan arguments
 	params parameters
 }
 
@@ -67,7 +66,7 @@ func checkFeasibleRecord(t *testing.T, v parameters, args <-chan arguments) {
 	for arg := range args {
 		// Each call to IsFeasible is paried with a go RecordSolution. Thus
 		// we're looking for pairs of arguments.
-		if count % 2 == 0 {
+		if count%2 == 0 {
 			if arg.status == NotReady { // sentinel
 				return
 			}
@@ -88,7 +87,7 @@ func checkFeasibleRecord(t *testing.T, v parameters, args <-chan arguments) {
 func TestMinimize(t *testing.T) {
 	for hi := from; hi <= to; hi++ {
 		for lo := from; lo <= hi; lo++ {
-			for opt := lo; opt <= hi + 1; opt++ {
+			for opt := lo; opt <= hi+1; opt++ {
 				m := newMinimizer(lo, hi, opt, t)
 				go checkFeasibleRecord(t, m.params, m.args)
 				min, optimal, feasible := Minimize(m)

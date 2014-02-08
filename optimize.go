@@ -28,7 +28,6 @@ type Minimizer interface {
 	RecordSolution(k, status int, solution []bool)
 }
 
-
 // Minimize finds the value min that minimizes Minimizer m. If the value can be
 // proved to be optimal, that is, k < min causes m.IsFeasible(k) to return
 // status Unsatisfiable, optimal will be set to true. If
@@ -48,7 +47,7 @@ func Minimize(m Minimizer) (min int, optimal, feasible bool) {
 		return hi, false, false
 	}
 	for hi > lo {
-		k := lo + (hi - lo) / 2 // avoid overfow. See sort/search.go in stdlib
+		k := lo + (hi-lo)/2 // avoid overfow. See sort/search.go in stdlib
 		status, solution = m.IsFeasible(k)
 		go m.RecordSolution(k, status, solution)
 		if status == Satisfiable {

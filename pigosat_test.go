@@ -331,8 +331,7 @@ func TestPicosatVersion(t *testing.T) {
 // This is the example from the README.
 func Example_readme() {
 	p, _ := NewPigosat(nil)
-	p.AddClauses([][]int32{{1, 2}, {-2}})
-	fmt.Println("")
+	p.AddClauses([][]int32{{1, 2}, {1}, {-2}})
 	fmt.Printf("# variables == %d\n", p.Variables())
 	fmt.Printf("# clauses == %d\n", p.AddedOriginalClauses())
 	status, solution := p.Solve()
@@ -344,7 +343,7 @@ func Example_readme() {
 	fmt.Printf("solution[2] == %v\n", solution[2])
 	// Output:
 	// # variables == 2
-	// # clauses == 2
+	// # clauses == 3
 	// status == pigosat.Satisfiable
 	// len(solution) == 3
 	// solution[1] == true

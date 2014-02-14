@@ -55,8 +55,8 @@ type Pigosat struct {
 	lock *sync.RWMutex
 }
 
-// Settings that must be decided before adding any clauses. Zero values indicate
-// default behavior.
+// Struct Options contains optional settings for the Pigosat constructor. Zero
+// values for each field indicate default behavior.
 type Options struct {
 	// Set PropagationLimit to a positive value to limit how long the solver
 	// tries to find a solution.

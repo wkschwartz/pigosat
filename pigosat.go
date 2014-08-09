@@ -9,10 +9,6 @@
 // solve with p.Solve.
 package pigosat
 
-// picosat/libpicosat.a must exist to build this file. See README.md.
-
-// #cgo CFLAGS: -I picosat
-// #cgo LDFLAGS: -l picosat -L picosat
 // #include "picosat.h"
 import "C"
 import (

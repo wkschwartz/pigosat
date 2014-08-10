@@ -9,10 +9,6 @@
 // solve with p.Solve.
 package pigosat
 
-// picosat/libpicosat.a must exist to build this file. See README.md.
-
-// #cgo CFLAGS: -I picosat
-// #cgo LDFLAGS: -l picosat -L picosat
 // #include "picosat.h"
 import "C"
 import (
@@ -205,23 +201,17 @@ func (p *Pigosat) AddClauses(clauses [][]int32) {
 	}
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	var had0 bool
+
+	var count int
 	for _, clause := range clauses {
-		if len(clause) == 0 {
+		count = len(clause)
+		if count == 0 {
 			continue
 		}
-		had0 = false
-		for _, lit := range clause {
-			// int picosat_add (PicoSAT *, int lit);
-			C.picosat_add(p.p, C.int(lit))
-			if lit == 0 {
-				had0 = true
-				break
-			}
+		if clause[count-1] != 0 {
+			clause = append(clause, 0)
 		}
-		if !had0 {
-			C.picosat_add(p.p, 0)
-		}
+		C.picosat_add_lits(p.p, (*C.int)(&clause[0]))
 	}
 }
 

@@ -205,16 +205,20 @@ func (p *Pigosat) AddClauses(clauses [][]int32) {
 	}
 	p.lock.Lock()
 	defer p.lock.Unlock()
-
 	var count int
 	for _, clause := range clauses {
 		count = len(clause)
 		if count == 0 {
 			continue
 		}
+		// picosat requires that a clause ends in a 0, otherwise it will
+		// result in a buffer overflow.
+		// If the provided clause does not end in 0, then
+		// we need to append it ourselves.
 		if clause[count-1] != 0 {
 			clause = append(clause, 0)
 		}
+		// int picosat_add_lits (PicoSAT *, int * lits);
 		C.picosat_add_lits(p.p, (*C.int)(&clause[0]))
 	}
 }

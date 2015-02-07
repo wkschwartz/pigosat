@@ -349,3 +349,45 @@ func Example_readme() {
 	// solution[1] == true
 	// solution[2] == false
 }
+
+// The element of formulaTests to use for benchmarking. This one is a longer
+// test, so we might pick up more speed effects with it.
+const benchTest = 9
+
+// BenchmarkSolve measures how long it takes to create and solve a Pigosat
+// instance.
+func BenchmarkSolve(b *testing.B) {
+	formula := formulaTests[benchTest].formula
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p, _ := NewPigosat(nil)
+		p.AddClauses(formula)
+		_, _ = p.Solve()
+	}
+}
+
+// BenchmarkCreate measures how long it takes just to create a new Pigosat
+// object without any options.
+func BenchmarkCreate(b *testing.B) {
+	var p *Pigosat
+	for i := 0; i < b.N; i++ {
+		p, _ = NewPigosat(nil)
+	}
+	// Shut the compiler up about not using p.
+	b.StopTimer()
+	p.AddClauses(formulaTests[benchTest].formula)
+}
+
+// BenchmarkAddClauses measures how long it takes to add a formula to a Pigosat
+// object that already exists.
+func BenchmarkAddClauses(b *testing.B) {
+	b.StopTimer()
+	formula := formulaTests[benchTest].formula
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p, _ := NewPigosat(nil)
+		b.StartTimer()
+		p.AddClauses(formula)
+		b.StopTimer()
+	}
+}

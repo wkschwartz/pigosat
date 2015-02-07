@@ -15,7 +15,7 @@ $ go get github.com/wkschwartz/pigosat
 ```
 
 PiGoSAT is a wrapper around [Picosat](http://fmv.jku.at/picosat/), whose C
-source files are included in this repository. 
+source files are included in this repository.
 
 Contributing
 ------------

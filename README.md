@@ -8,39 +8,14 @@ Downloading
 
 The project is hosted on [GitHub](https://github.com/wkschwartz/pigosat). You
 can either download a [release](https://github.com/wkschwartz/PiGoSAT/releases)
-or use Git:
+or use "go get":
 
 ```bash
-$ git clone https://github.com/wkschwartz/pigosat
+$ go get github.com/wkschwartz/pigosat
 ```
-
-Building and Installation
--------------------------
 
 PiGoSAT is a wrapper around [Picosat](http://fmv.jku.at/picosat/), whose C
-source files are included in this repository. Go's
-[cgo](http://golang.org/cmd/cgo/) system claims to compile C source code it
-finds, but I can't figure out how to get it to work. So you'll have to compile
-PicoSAT first. For this reason, PiGoSAT is not `go get`able. The following
-commands should be sufficient to compile `libpicosat` on most Unix systems. (If
-you know how to compile PiGoSAT on Windows, please submit instructions and I
-will add them; see the "Contributing" section).
-
-```bash
-$ cd picosat
-$ ./configure
-$ make libpicosat.a
-$ cp libpicosat.a tmp && make clean && mv tmp libpicosat.a # Optional clean up
-$ cd ..
-```
-
-After that the `go command` works as usual. The following incantation runs the
-tests and if they pass, installs PiGoSAT. (Ensure your
-[GOPATH](http://golang.org/cmd/go/#hdr-GOPATH_environment_variable) is set.)
-
-```bash
-$ go test && go install
-```
+source files are included in this repository.
 
 Contributing
 ------------
@@ -52,3 +27,8 @@ exists already.
 If you would like to contribute code, please
 [fork](https://github.com/wkschwartz/PiGoSAT/fork) PiGoSAT and send a [pull
 request](https://help.github.com/articles/using-pull-requests).
+
+### Updating PicoSAT
+
+Replace `picsoat.h`, `picosat.c`, and update `func PicosatVersion` in
+`pigosat.go`. Copy `LICENSE` from PicoSAT to `LICENSE.picosat` in PiGoSAT.

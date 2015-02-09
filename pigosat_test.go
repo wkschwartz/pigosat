@@ -321,13 +321,6 @@ func TestNil(t *testing.T) {
 	}
 }
 
-// Test our assumption about what Picosat we're using.
-func TestPicosatVersion(t *testing.T) {
-	if v := PicosatVersion(); v != "957" {
-		t.Errorf("Expected Picosat version 957, got version %s", v)
-	}
-}
-
 // This is the example from the README.
 func Example_readme() {
 	p, _ := NewPigosat(nil)

@@ -27,7 +27,7 @@ var Version = SemanticVersion{0, 3, 0, "", 0}
 
 // PicosatVersion returns the version string from the underlying Picosat
 // library.
-func PicosatVersion() string { return "957" }
+func PicosatVersion() string { return "960" }
 
 // Return values for Pigosat.Solve's status.
 const (

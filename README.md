@@ -27,3 +27,8 @@ exists already.
 If you would like to contribute code, please
 [fork](https://github.com/wkschwartz/PiGoSAT/fork) PiGoSAT and send a [pull
 request](https://help.github.com/articles/using-pull-requests).
+
+### Updating PicoSAT
+
+Replace `picsoat.h`, `picosat.c`, and update `func PicosatVersion` in
+`pigosat.go`. Copy `LICENSE` from PicoSAT to `LICENSE.picosat` in PiGoSAT.

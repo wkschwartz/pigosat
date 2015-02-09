@@ -9,7 +9,9 @@
 // solve with p.Solve.
 package pigosat
 
-// #include "picosat.h"
+// #cgo CFLAGS: -DNDEBUG -O3
+// #cgo windows CFLAGS: -DNGETRUSAGE -DNALLSIGNALS
+// #include "picosat.h" /* REMEMBER TO UPDATE func PicosatVersion BELOW! */
 import "C"
 import (
 	"fmt"
@@ -25,9 +27,7 @@ var Version = SemanticVersion{0, 3, 0, "", 0}
 
 // PicosatVersion returns the version string from the underlying Picosat
 // library.
-func PicosatVersion() string {
-	return C.GoString(C.picosat_version())
-}
+func PicosatVersion() string { return "957" }
 
 // Return values for Pigosat.Solve's status.
 const (

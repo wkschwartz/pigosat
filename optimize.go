@@ -23,8 +23,9 @@ type Minimizer interface {
 	// k >= K implies IsFeasible(k) returns status Satisfiable.
 	IsFeasible(k int) (status int, solution []bool)
 
-	// RecordSolution allows typs implementing this interface to store solutions
-	// for after minimization has finished.
+	// RecordSolution allows types implementing this interface to store
+	// solutions for after minimization has finished. Must be safe for parallel
+	// use.
 	RecordSolution(k, status int, solution []bool)
 }
 

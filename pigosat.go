@@ -240,7 +240,7 @@ func (p *Pigosat) blocksol(sol []bool) {
 // indexed by the variables in the formula (so the first element is always
 // false). Solve can be used like an iterator, yielding a new solution until
 // there are no more feasible solutions:
-//    for status, solution := p.Solve(); status == Satisfiable; status, solution = p.Solve {
+//    for status, solution := p.Solve(); status == Satisfiable; status, solution = p.Solve() {
 //        // Do stuff with status, solution
 //    }
 func (p *Pigosat) Solve() (status int, solution []bool) {

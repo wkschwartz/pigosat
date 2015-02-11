@@ -132,13 +132,18 @@ func NewPigosat(options *Options) (*Pigosat, error) {
 	return pgo, nil
 }
 
+// isReady returns true when p is properly initialized and false otherwise.
+func (p *Pigosat) isReady() bool {
+	return p != nil && p.p != nil
+}
+
 // Delete may be called when you are done using a Pigosat instance, after which
 // it cannot be used again. However, you only need to call this method if the
 // instance's finalizer was reset using runtime.SetFinalizer (if you're not
 // sure, it's always safe to call Delete again). Most users will not need this
 // method.
 func (p *Pigosat) Delete() {
-	if p == nil || p.p == nil {
+	if !p.isReady() {
 		return
 	}
 	p.lock.Lock()
@@ -155,7 +160,7 @@ func (p *Pigosat) Delete() {
 // Variables returns the number of variables in the formula: The m in the DIMACS
 // header "p cnf <m> n".
 func (p *Pigosat) Variables() int {
-	if p == nil || p.p == nil {
+	if !p.isReady() {
 		return 0
 	}
 	p.lock.RLock()
@@ -167,7 +172,7 @@ func (p *Pigosat) Variables() int {
 // AddedOriginalClauses returns the number of clauses in the formula: The n in
 // the DIMACS header "p cnf m <n>".
 func (p *Pigosat) AddedOriginalClauses() int {
-	if p == nil || p.p == nil {
+	if !p.isReady() {
 		return 0
 	}
 	p.lock.RLock()
@@ -178,7 +183,7 @@ func (p *Pigosat) AddedOriginalClauses() int {
 
 // Seconds returns the time spent in the PicoSAT library.
 func (p *Pigosat) Seconds() time.Duration {
-	if p == nil || p.p == nil {
+	if !p.isReady() {
 		return 0
 	}
 	p.lock.RLock()
@@ -196,7 +201,7 @@ func (p *Pigosat) Seconds() time.Duration {
 // the clause, and causes AddClauses to skip reading the rest of the slice. Nil
 // slices are ignored and skipped.
 func (p *Pigosat) AddClauses(clauses [][]int32) {
-	if p == nil || p.p == nil {
+	if !p.isReady() {
 		return
 	}
 	p.lock.Lock()
@@ -244,7 +249,7 @@ func (p *Pigosat) blocksol(sol []bool) {
 //        // Do stuff with status, solution
 //    }
 func (p *Pigosat) Solve() (status int, solution []bool) {
-	if p == nil || p.p == nil {
+	if !p.isReady() {
 		return NotReady, nil
 	}
 	p.lock.Lock()
@@ -277,7 +282,7 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 // length. There is no need to call BlockSolution after calling Pigosat.Solve,
 // which calls it automatically for every Satisfiable solution.
 func (p *Pigosat) BlockSolution(solution []bool) error {
-	if p == nil || p.p == nil {
+	if !p.isReady() {
 		return nil
 	}
 	p.lock.Lock()

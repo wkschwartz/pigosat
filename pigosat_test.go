@@ -35,14 +35,20 @@ func equal(x, y []bool) bool {
 // solution.
 func evaluate(formula [][]int32, solution []bool) bool {
 	var c bool // The value for the clause
+	var index int
 	for _, clause := range formula {
 		c = false
 		if len(clause) == 0 {
 			continue
 		}
 		for _, literal := range clause {
-			if literal > 0 && solution[abs(literal)] ||
-				literal < 0 && !solution[abs(literal)] {
+			index = abs(literal)
+			// Solution isn't even the right length
+			if index >= len(solution) {
+				return false
+			}
+			if literal > 0 && solution[index] ||
+				literal < 0 && !solution[index] {
 				c = true
 				break
 			}
@@ -175,19 +181,20 @@ func TestIterSolve(t *testing.T) {
 }
 
 func TestBlockSolution(t *testing.T) {
+	var status int
 	for i, ft := range formulaTests {
 		p, _ := NewPigosat(nil)
 
 		// Test bad inputs: one too short (remember sol[0] is always blank)
 		solution := make([]bool, p.Variables())
 		if err := p.BlockSolution(solution); err == nil {
-			t.Errorf("Test %d: Expected error when solution too short")
+			t.Errorf("Test %d: Expected error when solution too short", i)
 		}
 		// Now it'll be one too long
 		solution = append(solution, true)
 		solution = append(solution, true)
 		if err := p.BlockSolution(solution); err == nil {
-			t.Errorf("Test %d: Expected error when solution too long")
+			t.Errorf("Test %d: Expected error when solution too long", i)
 		}
 
 		// Solve should not return ft.expected if it's blocked
@@ -196,7 +203,11 @@ func TestBlockSolution(t *testing.T) {
 			if err := p.BlockSolution(ft.expected); err != nil {
 				t.Errorf("Test %d: Unexpected error from BlockSolution: %v", i, err)
 			}
-			_, solution = p.Solve()
+			status, solution = p.Solve()
+			if status != ft.status {
+				t.Errorf("Test %d: Got status %v, expected %v", i, status,
+					ft.status)
+			}
 			if !evaluate(ft.formula, solution) {
 				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
 					i, solution, ft.formula)

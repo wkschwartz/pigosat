@@ -143,11 +143,11 @@ func (p *Pigosat) isReady() bool {
 // sure, it's always safe to call Delete again). Most users will not need this
 // method.
 func (p *Pigosat) Delete() {
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	if !p.isReady() {
 		return
 	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
 	// void picosat_reset (PicoSAT *);
 	C.picosat_reset(p.p)
 	p.p = nil
@@ -160,11 +160,11 @@ func (p *Pigosat) Delete() {
 // Variables returns the number of variables in the formula: The m in the DIMACS
 // header "p cnf <m> n".
 func (p *Pigosat) Variables() int {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	if !p.isReady() {
 		return 0
 	}
-	p.lock.RLock()
-	defer p.lock.RUnlock()
 	// int picosat_variables (PicoSAT *);
 	return int(C.picosat_variables(p.p))
 }
@@ -172,22 +172,22 @@ func (p *Pigosat) Variables() int {
 // AddedOriginalClauses returns the number of clauses in the formula: The n in
 // the DIMACS header "p cnf m <n>".
 func (p *Pigosat) AddedOriginalClauses() int {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	if !p.isReady() {
 		return 0
 	}
-	p.lock.RLock()
-	defer p.lock.RUnlock()
 	// int picosat_added_original_clauses (PicoSAT *);
 	return int(C.picosat_added_original_clauses(p.p))
 }
 
 // Seconds returns the time spent in the PicoSAT library.
 func (p *Pigosat) Seconds() time.Duration {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	if !p.isReady() {
 		return 0
 	}
-	p.lock.RLock()
-	defer p.lock.RUnlock()
 	// double picosat_seconds (PicoSAT *);
 	return time.Duration(float64(C.picosat_seconds(p.p)) * float64(time.Second))
 }
@@ -201,11 +201,11 @@ func (p *Pigosat) Seconds() time.Duration {
 // the clause, and causes AddClauses to skip reading the rest of the slice. Nil
 // slices are ignored and skipped.
 func (p *Pigosat) AddClauses(clauses [][]int32) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	if !p.isReady() {
 		return
 	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
 	var had0 bool
 	for _, clause := range clauses {
 		if len(clause) == 0 {
@@ -249,11 +249,11 @@ func (p *Pigosat) blocksol(sol []bool) {
 //        // Do stuff with status, solution
 //    }
 func (p *Pigosat) Solve() (status int, solution []bool) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	if !p.isReady() {
 		return NotReady, nil
 	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
 	// int picosat_sat (PicoSAT *, int decision_limit);
 	status = int(C.picosat_sat(p.p, -1))
 	if status == Unsatisfiable || status == Unknown {
@@ -282,11 +282,11 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 // length. There is no need to call BlockSolution after calling Pigosat.Solve,
 // which calls it automatically for every Satisfiable solution.
 func (p *Pigosat) BlockSolution(solution []bool) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	if !p.isReady() {
 		return nil
 	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
 	if n := int(C.picosat_variables(p.p)); len(solution) != n+1 {
 		return fmt.Errorf("solution length %d, but have %d variables",
 			len(solution), n)

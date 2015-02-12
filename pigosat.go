@@ -221,6 +221,22 @@ func (p *Pigosat) AddClauses(clauses [][]int32) {
 	}
 }
 
+// Print appends the CNF in DIMACS format to the given file.
+func (p *Pigosat) Print(file *os.File) error {
+	if p == nil || p.p == nil {
+		return nil
+	}
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	cfile, err := cfdopen(file, "a")
+	if err != nil {
+		return err
+	}
+	// void picosat_print (PicoSAT *, FILE *);
+	_, err = C.picosat_print(p.p, cfile)
+	return err
+}
+
 // blocksol adds the inverse of the solution to the clauses.
 // This private method does not acquire the lock or check if p is nil.
 func (p *Pigosat) blocksol(sol []bool) {

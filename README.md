@@ -30,5 +30,5 @@ request](https://help.github.com/articles/using-pull-requests).
 
 ### Updating PicoSAT
 
-Replace `picsoat.h`, `picosat.c`, and update `func PicosatVersion` in
+Replace `picsoat.h`, `picosat.c`, and update `PicosatVersion` in
 `pigosat.go`. Copy `LICENSE` from PicoSAT to `LICENSE.picosat` in PiGoSAT.

@@ -11,7 +11,7 @@ package pigosat
 
 // #cgo CFLAGS: -DNDEBUG -O3
 // #cgo windows CFLAGS: -DNGETRUSAGE -DNALLSIGNALS
-// #include "picosat.h" /* REMEMBER TO UPDATE func PicosatVersion BELOW! */
+// #include "picosat.h" /* REMEMBER TO UPDATE PicosatVersion BELOW! */
 import "C"
 import (
 	"fmt"
@@ -25,9 +25,8 @@ import (
 
 var Version = SemanticVersion{0, 4, 0, "", 0}
 
-// PicosatVersion returns the version string from the underlying Picosat
-// library.
-func PicosatVersion() string { return "960" }
+// PicosatVersion is the version string from the underlying Picosat library.
+const PicosatVersion = "960"
 
 // Return values for Pigosat.Solve's status.
 const (

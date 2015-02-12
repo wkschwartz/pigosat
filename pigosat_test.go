@@ -77,7 +77,7 @@ var formulaTests = []formulaTest{
 	0: {[][]int32{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
 		5, 3, Satisfiable,
 		[]bool{false, true, false, false, false, true}, false,
-`p cnf 5 3
+		`p cnf 5 3
 1 4 -5 0
 -1 3 4 5 0
 -3 -4 0
@@ -85,7 +85,7 @@ var formulaTests = []formulaTest{
 	1: {[][]int32{{-1}, {1}},
 		1, 2, Unsatisfiable,
 		nil, false,
-`p cnf 1 3
+		`p cnf 1 3
 -1 0
 1 0
 0
@@ -93,7 +93,7 @@ var formulaTests = []formulaTest{
 	2: {[][]int32{{-1, 2}, {-1, -2}, {1, -2}},
 		2, 3, Satisfiable,
 		[]bool{false, false, false}, true,
-`p cnf 2 3
+		`p cnf 2 3
 1 -2 0
 -1 2 0
 -1 -2 0
@@ -102,7 +102,7 @@ var formulaTests = []formulaTest{
 	3: {[][]int32{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
 		5, 3, Satisfiable,
 		[]bool{false, true, false, false, false, true}, false,
-`p cnf 5 3
+		`p cnf 5 3
 1 4 -5 0
 -1 3 4 5 0
 -3 -4 0
@@ -113,7 +113,7 @@ var formulaTests = []formulaTest{
 	// From "DIMACS example 1"
 	4: {[][]int32{{-2}, {-1, -3}, {1, 2}, {2, 3}},
 		3, 4, Unsatisfiable, nil, false,
-`p cnf 3 6
+		`p cnf 3 6
 -2 0
 1 0
 3 0
@@ -125,14 +125,14 @@ var formulaTests = []formulaTest{
 	5: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}},
 		2, 3, Satisfiable,
 		[]bool{false, true, true}, true,
-`p cnf 2 3
+		`p cnf 2 3
 1 2 0
 1 -2 0
 -1 2 0
 `},
 	6: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}, {-1}},
 		2, 4, Unsatisfiable, nil, false,
-`p cnf 2 4
+		`p cnf 2 4
 -1 0
 1 2 0
 1 -2 0
@@ -140,7 +140,7 @@ var formulaTests = []formulaTest{
 `},
 	7: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}, {-2}},
 		2, 4, Unsatisfiable, nil, false,
-`p cnf 2 4
+		`p cnf 2 4
 -2 0
 1 2 0
 1 -2 0
@@ -150,7 +150,7 @@ var formulaTests = []formulaTest{
 	8: {[][]int32{{1, 2, 3}, {1, 2, -3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
 		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {1, 4}},
 		6, 10, Unsatisfiable, nil, false,
-`p cnf 6 10
+		`p cnf 6 10
 1 2 3 0
 1 2 -3 0
 1 -2 3 0
@@ -167,7 +167,7 @@ var formulaTests = []formulaTest{
 		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {-1, 4}, {-1, -4}},
 		6, 11, Satisfiable,
 		[]bool{false, false, false, true, true, false, false}, false,
-`p cnf 6 10
+		`p cnf 6 10
 1 2 3 0
 1 -2 3 0
 1 -2 -3 0

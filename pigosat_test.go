@@ -303,32 +303,38 @@ func TestMeasureAllCalls(t *testing.T) {
 	}
 }
 
-// Test that nil method calls are no ops
-func TestNil(t *testing.T) {
+// Assert that function f panics when called. test is a string identifying which
+// input data are being tested. method is a string identifying which method is
+// being tested in f.
+func assertPanics(t *testing.T, test, method string, f func()) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Test %s: %s failed to panic", test, method)
+		}
+	}()
+	f()
+}
+
+// Test that method calls on uninitialized or deleted objects panic
+// (except Delete, which is a no-op)
+func TestUninitializedOrDeleted(t *testing.T) {
 	var a, b *Pigosat
 	b, _ = NewPigosat(nil)
 	b.Delete()
 	for name, p := range map[string]*Pigosat{"uninit": a, "deleted": b} {
-		// No panicking
-		p.Delete()
-		p.AddClauses([][]int32{{1}, {2}})
-		if p.Variables() != 0 {
-			t.Errorf("Test %s: Expected 0 vars, got %d", name, p.Variables())
-		}
-		if c := p.AddedOriginalClauses(); c != 0 {
-			t.Errorf("Test %s: Expected 0 clauses, got %d", name, c)
-		}
-		if p.Seconds() != 0 {
-			t.Errorf("Test %s: Expected 0 seconds, got %v", name, p.Seconds())
-		}
-		if status, solution := p.Solve(); status != NotReady || solution != nil {
-			t.Errorf("Test %s: Expected status %d and nil solution, got %d and %v",
-				name, NotReady, status, solution)
-		}
-		if err := p.BlockSolution([]bool{}); err != nil {
-			t.Errorf("Test %s: Expected no-op BlockSolution, got error: %v",
-				name, err)
-		}
+		assertPanics(t, name, "AddClauses", func() {
+			p.AddClauses([][]int32{{1}, {2}})
+		})
+		assertPanics(t, name, "Variables", func() { p.Variables() })
+		assertPanics(t, name, "AddedOriginalClauses", func() {
+			p.AddedOriginalClauses()
+		})
+		assertPanics(t, name, "Seconds", func() { p.Seconds() })
+		assertPanics(t, name, "Solve", func() { p.Solve() })
+		assertPanics(t, name, "BlockSolution", func() {
+			p.BlockSolution([]bool{})
+		})
+		p.Delete() // No panicking; do last for clean uninitialized-object test
 	}
 }
 

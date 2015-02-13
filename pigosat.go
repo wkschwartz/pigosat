@@ -61,9 +61,9 @@ type Options struct {
 	OutputFile *os.File
 
 	/* Set verbosity level. A verbosity level of 1 and above prints more and
-	* more detailed progress reports on the output file, set by
-	* 'picosat_set_output'. Verbose messages are prefixed with the string set
-	* by 'picosat_set_prefix'.
+	 * more detailed progress reports on the output file, set by
+	 * 'picosat_set_output'. Verbose messages are prefixed with the string set
+	 * by 'picosat_set_prefix'.
 	 */
 	Verbosity uint
 

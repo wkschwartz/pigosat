@@ -5,8 +5,8 @@
 // Designing your model is beyond the scope of this document, but Googling
 // "satisfiability problem", "conjunctive normal form", and "DIMACS" are good
 // places to start. Once you have your model, create a Pigosat instance p with
-// pigosat.NewPigosat, add the model to the instance with p.AddClauses, and
-// solve with p.Solve.
+// pigosat.New, add the model to the instance with p.AddClauses, and solve with
+// p.Solve.
 package pigosat
 
 // #cgo CFLAGS: -DNDEBUG -O3
@@ -38,8 +38,8 @@ const (
 	Unsatisfiable int = C.PICOSAT_UNSATISFIABLE
 )
 
-// Struct Pigosat must be created with NewPigosat and stores the state of the
-// solver. Once initialized by NewPigosat, it is safe for concurrent use.
+// Struct Pigosat must be created with New and stores the state of the
+// solver. It is safe for concurrent use.
 //
 // You must not use runtime.SetFinalizer with Pigosat objects. Attempting to
 // call a method on an uninitialized Pigosat object panics.
@@ -93,10 +93,9 @@ func cfdopen(file *os.File, mode string) (*C.FILE, error) {
 	return cfile, nil
 }
 
-// NewPigosat returns a new Pigosat instance, ready to have literals added to
-// it. The error return value need only be checked if the OutputFile option is
-// non-nil.
-func NewPigosat(options *Options) (*Pigosat, error) {
+// New returns a new Pigosat instance, ready to have literals added to it. The
+// error return value need only be checked if the OutputFile option is non-nil.
+func New(options *Options) (*Pigosat, error) {
 	// PicoSAT * picosat_init (void);
 	p := C.picosat_init()
 	if options != nil {
@@ -131,7 +130,7 @@ func NewPigosat(options *Options) (*Pigosat, error) {
 }
 
 // delete frees memory associated with p's PicoSAT object. It only needs to be
-// called from the runtime.SetFinalizer set in NewPigosat.
+// called from the runtime.SetFinalizer set in New.
 func (p *Pigosat) delete() {
 	// For some reason, SetFinalizer needs delete to be idempotent/reentrant.
 	// That said, since finalizers are only run when there are no more

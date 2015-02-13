@@ -219,7 +219,7 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest, status int,
 
 func TestFormulas(t *testing.T) {
 	for i, ft := range formulaTests {
-		p, _ := NewPigosat(nil)
+		p, _ := New(nil)
 		p.AddClauses(ft.formula)
 		status, solution := p.Solve()
 		wasExpected(t, i, p, &ft, status, solution)
@@ -230,7 +230,7 @@ func TestIterSolve(t *testing.T) {
 	var status int
 	var this, last []bool // solutions
 	for i, ft := range formulaTests {
-		p, _ := NewPigosat(nil)
+		p, _ := New(nil)
 		p.AddClauses(ft.formula)
 		count := 0
 		for status, this = p.Solve(); status == Satisfiable; status, this = p.Solve() {
@@ -253,7 +253,7 @@ func TestIterSolve(t *testing.T) {
 func TestBlockSolution(t *testing.T) {
 	var status int
 	for i, ft := range formulaTests {
-		p, _ := NewPigosat(nil)
+		p, _ := New(nil)
 
 		// Test bad inputs: one too short (remember sol[0] is always blank)
 		solution := make([]bool, p.Variables())
@@ -297,7 +297,7 @@ func TestPropLimit(t *testing.T) {
 		}
 		seenUn, seenSat := false, false
 		for limit := uint64(1); limit < 20; limit++ {
-			p, _ := NewPigosat(&Options{PropagationLimit: limit})
+			p, _ := New(&Options{PropagationLimit: limit})
 			p.AddClauses(ft.formula)
 			status, solution := p.Solve()
 			if status == Unknown {
@@ -337,7 +337,7 @@ func TestOutput(t *testing.T) {
 			}
 		}()
 		prefix := fmt.Sprintf("asdf%x ", i)
-		p, err := NewPigosat(&Options{Verbosity: 1, OutputFile: tmp, Prefix: prefix})
+		p, err := New(&Options{Verbosity: 1, OutputFile: tmp, Prefix: prefix})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -358,13 +358,13 @@ func TestOutput(t *testing.T) {
 // Without MeasureAllCalls, AddClasuses is not measured. With it, it is.
 func TestMeasureAllCalls(t *testing.T) {
 	for i, ft := range formulaTests {
-		p, _ := NewPigosat(nil)
+		p, _ := New(nil)
 		p.AddClauses(ft.formula)
 		if p.Seconds() != 0 {
 			t.Errorf("Test %d: Seconds without MeasureAllCalls should not "+
 				"measure AddClauses, but p.Seconds() == %v", i, p.Seconds())
 		}
-		p, _ = NewPigosat(&Options{MeasureAllCalls: true})
+		p, _ = New(&Options{MeasureAllCalls: true})
 		p.AddClauses(ft.formula)
 		if p.Seconds() == 0 {
 			t.Errorf("Test %d: Seconds with MeasureAllCalls should measure "+
@@ -388,7 +388,7 @@ func assertPanics(t *testing.T, test, method string, f func()) {
 // Test that method calls on uninitialized or deleted objects panic
 func TestUninitializedOrDeleted(t *testing.T) {
 	var a, b *Pigosat
-	b, _ = NewPigosat(nil)
+	b, _ = New(nil)
 	b.delete()
 	for name, p := range map[string]*Pigosat{"uninit": a, "deleted": b} {
 		assertPanics(t, name, "AddClauses", func() {
@@ -419,7 +419,7 @@ func TestPrint(t *testing.T) {
 				t.Error(err)
 			}
 		}()
-		p, err := NewPigosat(nil)
+		p, err := New(nil)
 		p.AddClauses(ft.formula)
 		p.Print(tmp)
 		// Now we make sure the file was written.
@@ -436,7 +436,7 @@ func TestPrint(t *testing.T) {
 
 // This is the example from the README.
 func Example_readme() {
-	p, _ := NewPigosat(nil)
+	p, _ := New(nil)
 	p.AddClauses([][]int32{{1, 2}, {1}, {-2}})
 	fmt.Printf("# variables == %d\n", p.Variables())
 	fmt.Printf("# clauses == %d\n", p.AddedOriginalClauses())
@@ -466,7 +466,7 @@ func BenchmarkSolve(b *testing.B) {
 	formula := formulaTests[benchTest].formula
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p, _ := NewPigosat(nil)
+		p, _ := New(nil)
 		p.AddClauses(formula)
 		_, _ = p.Solve()
 	}
@@ -477,7 +477,7 @@ func BenchmarkSolve(b *testing.B) {
 func BenchmarkCreate(b *testing.B) {
 	var p *Pigosat
 	for i := 0; i < b.N; i++ {
-		p, _ = NewPigosat(nil)
+		p, _ = New(nil)
 	}
 	// Shut the compiler up about not using p.
 	b.StopTimer()
@@ -491,7 +491,7 @@ func BenchmarkAddClauses(b *testing.B) {
 	formula := formulaTests[benchTest].formula
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p, _ := NewPigosat(nil)
+		p, _ := New(nil)
 		b.StartTimer()
 		p.AddClauses(formula)
 		b.StopTimer()

@@ -67,7 +67,7 @@ func checkFeasibleRecord(t *testing.T, v parameters, args <-chan arguments) {
 		// Each call to IsFeasible is paried with a go RecordSolution. Thus
 		// we're looking for pairs of arguments.
 		if count%2 == 0 {
-			if arg.status == NotReady { // sentinel
+			if arg.status == -1 { // sentinel
 				return
 			}
 			last = arg
@@ -91,7 +91,7 @@ func TestMinimize(t *testing.T) {
 				m := newMinimizer(lo, hi, opt, t)
 				go checkFeasibleRecord(t, m.params, m.args)
 				min, optimal, feasible := Minimize(m)
-				m.args <- arguments{status: NotReady} // sentinel
+				m.args <- arguments{status: -1} // sentinel
 				if opt <= hi && min != opt {
 					t.Errorf("%+v: min=%d", m.params, min)
 				}

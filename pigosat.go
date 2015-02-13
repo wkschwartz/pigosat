@@ -30,10 +30,6 @@ const PicosatVersion = "960"
 
 // Return values for Pigosat.Solve's status.
 const (
-	// NotReady is a solver status only used in PiGoSAT and it means the
-	// underlying data structures of the solver have not been initialized or
-	// their memory was previously freed.
-	NotReady = -1
 	// PicoSAT cannot determine the satisfiability of the formula.
 	Unknown = 0
 	// The formula is satisfiable.
@@ -44,6 +40,11 @@ const (
 
 // Struct Pigosat must be created with NewPigosat and stores the state of the
 // solver. Once initialized by NewPigosat, it is safe for concurrent use.
+//
+// You do not need to call Delete on your Pigosat object (unless you plan to use
+// runtime.SetFinalizer). However if you do, or if you create a Pigosat object
+// without NewPigosat (don't do that), all Pigosat methods will panic (except
+// Delete, which will be a no-op).
 type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT
@@ -134,14 +135,22 @@ func NewPigosat(options *Options) (*Pigosat, error) {
 // Delete may be called when you are done using a Pigosat instance, after which
 // it cannot be used again. However, you only need to call this method if the
 // instance's finalizer was reset using runtime.SetFinalizer (if you're not
-// sure, it's always safe to call Delete again). Most users will not need this
+// sure, it's always safe to call Delete again*). Most users will not need this
 // method.
+//
+// *Delete called on an uninitialized or already-Deleted object is a no-op,
+// unlike all other Pigosat methods, which cannot be called after Delete.
 func (p *Pigosat) Delete() {
-	if p == nil || p.p == nil {
+	// Don't use p.ready() here so that if you use Delete, you don't have to
+	// also do runtime.SetFinalizer(p, nil)
+	if p == nil {
 		return
 	}
 	p.lock.Lock()
 	defer p.lock.Unlock()
+	if p.p == nil {
+		return
+	}
 	// void picosat_reset (PicoSAT *);
 	C.picosat_reset(p.p)
 	p.p = nil
@@ -151,14 +160,32 @@ func (p *Pigosat) Delete() {
 	runtime.SetFinalizer(p, nil)
 }
 
+// ready readies a Pigosat object for use in a public method. It obtains the
+// appropriate lock and returns the appropriate unlocking method, so it can be
+// used like
+//     defer p.ready(readonly)()
+// where readonly should be true if the method does not write to p and must be
+// false if the method does write to p. If p is uninitialized or deleted,
+// ready panics.
+func (p *Pigosat) ready(readonly bool) (unlock func()) {
+	if readonly {
+		p.lock.RLock()
+		unlock = p.lock.RUnlock
+	} else {
+		p.lock.Lock()
+		unlock = p.lock.Unlock
+	}
+	if p.p == nil {
+		defer unlock()
+		panic("Attempted to use a deleted Pigosat object")
+	}
+	return
+}
+
 // Variables returns the number of variables in the formula: The m in the DIMACS
 // header "p cnf <m> n".
 func (p *Pigosat) Variables() int {
-	if p == nil || p.p == nil {
-		return 0
-	}
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+	defer p.ready(true)()
 	// int picosat_variables (PicoSAT *);
 	return int(C.picosat_variables(p.p))
 }
@@ -166,22 +193,14 @@ func (p *Pigosat) Variables() int {
 // AddedOriginalClauses returns the number of clauses in the formula: The n in
 // the DIMACS header "p cnf m <n>".
 func (p *Pigosat) AddedOriginalClauses() int {
-	if p == nil || p.p == nil {
-		return 0
-	}
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+	defer p.ready(true)()
 	// int picosat_added_original_clauses (PicoSAT *);
 	return int(C.picosat_added_original_clauses(p.p))
 }
 
 // Seconds returns the time spent in the PicoSAT library.
 func (p *Pigosat) Seconds() time.Duration {
-	if p == nil || p.p == nil {
-		return 0
-	}
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+	defer p.ready(true)()
 	// double picosat_seconds (PicoSAT *);
 	return time.Duration(float64(C.picosat_seconds(p.p)) * float64(time.Second))
 }
@@ -195,11 +214,7 @@ func (p *Pigosat) Seconds() time.Duration {
 // the clause, and causes AddClauses to skip reading the rest of the slice. Nil
 // slices are ignored and skipped.
 func (p *Pigosat) AddClauses(clauses [][]int32) {
-	if p == nil || p.p == nil {
-		return
-	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	defer p.ready(false)()
 	var had0 bool
 	for _, clause := range clauses {
 		if len(clause) == 0 {
@@ -222,11 +237,7 @@ func (p *Pigosat) AddClauses(clauses [][]int32) {
 
 // Print appends the CNF in DIMACS format to the given file.
 func (p *Pigosat) Print(file *os.File) error {
-	if p == nil || p.p == nil {
-		return nil
-	}
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+	defer p.ready(true)()
 	cfile, err := cfdopen(file, "a")
 	if err != nil {
 		return err
@@ -259,11 +270,7 @@ func (p *Pigosat) blocksol(sol []bool) {
 //        // Do stuff with status, solution
 //    }
 func (p *Pigosat) Solve() (status int, solution []bool) {
-	if p == nil || p.p == nil {
-		return NotReady, nil
-	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	defer p.ready(false)()
 	// int picosat_sat (PicoSAT *, int decision_limit);
 	status = int(C.picosat_sat(p.p, -1))
 	if status == Unsatisfiable || status == Unknown {
@@ -290,11 +297,7 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 // length. There is no need to call BlockSolution after calling Pigosat.Solve,
 // which calls it automatically for every Satisfiable solution.
 func (p *Pigosat) BlockSolution(solution []bool) error {
-	if p == nil || p.p == nil {
-		return nil
-	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	defer p.ready(false)()
 	if n := int(C.picosat_variables(p.p)); len(solution) != n+1 {
 		return fmt.Errorf("solution length %d, but have %d variables",
 			len(solution), n)

@@ -355,7 +355,7 @@ func TestOutput(t *testing.T) {
 	}
 }
 
-// Without MeasureAllCalls, AddClasuses is not meausured. With it, it is.
+// Without MeasureAllCalls, AddClasuses is not measured. With it, it is.
 func TestMeasureAllCalls(t *testing.T) {
 	for i, ft := range formulaTests {
 		p, _ := NewPigosat(nil)

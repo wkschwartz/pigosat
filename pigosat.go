@@ -41,10 +41,8 @@ const (
 // Struct Pigosat must be created with NewPigosat and stores the state of the
 // solver. Once initialized by NewPigosat, it is safe for concurrent use.
 //
-// You do not need to call Delete on your Pigosat object (unless you plan to use
-// runtime.SetFinalizer). However if you do, or if you create a Pigosat object
-// without NewPigosat (don't do that), all Pigosat methods will panic (except
-// Delete, which will be a no-op).
+// You must not use runtime.SetFinalizer with Pigosat objects. Attempting to
+// call a method on an uninitialized Pigosat object panics.
 type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT
@@ -128,36 +126,22 @@ func NewPigosat(options *Options) (*Pigosat, error) {
 		}
 	}
 	pgo := &Pigosat{p: p, lock: new(sync.RWMutex)}
-	runtime.SetFinalizer(pgo, (*Pigosat).Delete)
+	runtime.SetFinalizer(pgo, (*Pigosat).delete)
 	return pgo, nil
 }
 
-// Delete may be called when you are done using a Pigosat instance, after which
-// it cannot be used again. However, you only need to call this method if the
-// instance's finalizer was reset using runtime.SetFinalizer (if you're not
-// sure, it's always safe to call Delete again*). Most users will not need this
-// method.
-//
-// *Delete called on an uninitialized or already-Deleted object is a no-op,
-// unlike all other Pigosat methods, which cannot be called after Delete.
-func (p *Pigosat) Delete() {
-	// Don't use p.ready() here so that if you use Delete, you don't have to
-	// also do runtime.SetFinalizer(p, nil)
-	if p == nil {
-		return
-	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
+// delete frees memory associated with p's PicoSAT object. It only needs to be
+// called from the runtime.SetFinalizer set in NewPigosat.
+func (p *Pigosat) delete() {
+	// For some reason, SetFinalizer needs delete to be idempotent/reentrant.
+	// That said, since finalizers are only run when there are no more
+	// references to the object, there doesn't seem to be any point in locking.
 	if p.p == nil {
 		return
 	}
 	// void picosat_reset (PicoSAT *);
 	C.picosat_reset(p.p)
 	p.p = nil
-	// No longer need a finalizer. See file.close (not File.close) in the os
-	// package: http://golang.org/src/pkg/os/file_unix.go#L112 (sorry if the
-	// line number ends up wrong).
-	runtime.SetFinalizer(p, nil)
 }
 
 // ready readies a Pigosat object for use in a public method. It obtains the

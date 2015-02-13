@@ -386,11 +386,10 @@ func assertPanics(t *testing.T, test, method string, f func()) {
 }
 
 // Test that method calls on uninitialized or deleted objects panic
-// (except Delete, which is a no-op)
 func TestUninitializedOrDeleted(t *testing.T) {
 	var a, b *Pigosat
 	b, _ = NewPigosat(nil)
-	b.Delete()
+	b.delete()
 	for name, p := range map[string]*Pigosat{"uninit": a, "deleted": b} {
 		assertPanics(t, name, "AddClauses", func() {
 			p.AddClauses([][]int32{{1}, {2}})
@@ -405,7 +404,6 @@ func TestUninitializedOrDeleted(t *testing.T) {
 			p.BlockSolution([]bool{})
 		})
 		assertPanics(t, name, "Print", func() { p.Print(nil) })
-		p.Delete() // No panicking; do last for clean uninitialized-object test
 	}
 }
 

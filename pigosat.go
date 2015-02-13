@@ -146,7 +146,7 @@ func (p *Pigosat) Delete() {
 	C.picosat_reset(p.p)
 	p.p = nil
 	// No longer need a finalizer. See file.close (not File.close) in the os
-	// package: http://golang.org/src/pkg/os/file_unix.go#L115 (sorry if the
+	// package: http://golang.org/src/pkg/os/file_unix.go#L112 (sorry if the
 	// line number ends up wrong).
 	runtime.SetFinalizer(p, nil)
 }

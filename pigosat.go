@@ -277,9 +277,7 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 		// int picosat_deref (PicoSAT *, int lit);
 		if val := C.picosat_deref(p.p, C.int(i)); val > 0 {
 			solution[i] = true
-		} else if val < 0 {
-			solution[i] = false
-		} else {
+		} else if val == 0 {
 			panic(fmt.Errorf("Variable %d was assigned value 0", i))
 		}
 	}

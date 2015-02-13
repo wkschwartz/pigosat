@@ -31,11 +31,11 @@ const PicosatVersion = "960"
 // Return values for Pigosat.Solve's status.
 const (
 	// PicoSAT cannot determine the satisfiability of the formula.
-	Unknown = 0
+	Unknown int = C.PICOSAT_UNKNOWN
 	// The formula is satisfiable.
-	Satisfiable = 10
+	Satisfiable int = C.PICOSAT_SATISFIABLE
 	// The formula cannot be satisfied.
-	Unsatisfiable = 20
+	Unsatisfiable int = C.PICOSAT_UNSATISFIABLE
 )
 
 // Struct Pigosat must be created with NewPigosat and stores the state of the

@@ -350,7 +350,7 @@ func TestOutput(t *testing.T) {
 			t.Errorf("Output file not written to: bytes read=%d, err=%v", n, err)
 		}
 		if s := string(buf); s != prefix {
-			t.Errorf(`Wrong perfix: expected "%s" but got "%s"`, prefix, s)
+			t.Errorf(`Wrong prefix: expected "%s" but got "%s"`, prefix, s)
 		}
 	}
 }

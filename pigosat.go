@@ -211,11 +211,7 @@ func (p *Pigosat) AddClauses(clauses [][]int32) {
 		if count == 0 {
 			continue
 		}
-		// picosat requires that a clause ends in a 0, otherwise it will
-		// result in a buffer overflow.
-		// If the provided clause does not end in 0, then
-		// we need to append it ourselves.
-		if clause[count-1] != 0 {
+		if clause[count-1] != 0 { // 0 tells PicoSAT where to stop reading array
 			clause = append(clause, 0)
 		}
 		// int picosat_add_lits (PicoSAT *, int * lits);

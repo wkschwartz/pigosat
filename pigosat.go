@@ -198,23 +198,17 @@ func (p *Pigosat) Seconds() time.Duration {
 // slices are ignored and skipped.
 func (p *Pigosat) AddClauses(clauses [][]int32) {
 	defer p.ready(false)()
-	var had0 bool
+	var count int
 	for _, clause := range clauses {
-		if len(clause) == 0 {
+		count = len(clause)
+		if count == 0 {
 			continue
 		}
-		had0 = false
-		for _, lit := range clause {
-			// int picosat_add (PicoSAT *, int lit);
-			C.picosat_add(p.p, C.int(lit))
-			if lit == 0 {
-				had0 = true
-				break
-			}
+		if clause[count-1] != 0 { // 0 tells PicoSAT where to stop reading array
+			clause = append(clause, 0)
 		}
-		if !had0 {
-			C.picosat_add(p.p, 0)
-		}
+		// int picosat_add_lits (PicoSAT *, int * lits);
+		C.picosat_add_lits(p.p, (*C.int)(&clause[0]))
 	}
 }
 

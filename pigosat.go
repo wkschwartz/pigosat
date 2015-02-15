@@ -227,15 +227,17 @@ func (p *Pigosat) Print(file *os.File) error {
 // blocksol adds the inverse of the solution to the clauses.
 // This private method does not acquire the lock or check if p is nil.
 func (p *Pigosat) blocksol(sol []bool) {
-	n := int(C.picosat_variables(p.p))
-	for i := 1; i <= n; i++ {
+	n := C.picosat_variables(p.p)
+	clause := make([]C.int, n+1)
+	for i := C.int(1); i <= n; i++ {
 		if sol[i] {
-			C.picosat_add(p.p, C.int(-i))
+			clause[i-1] = -i
 		} else {
-			C.picosat_add(p.p, C.int(i))
+			clause[i-1] = i
 		}
 	}
-	C.picosat_add(p.p, 0)
+	// int picosat_add_lits (PicoSAT *, int * lits);
+	C.picosat_add_lits(p.p, &clause[0])
 }
 
 // Solve the formula and return the status of the solution: one of the constants

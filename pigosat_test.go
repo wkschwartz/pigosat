@@ -497,3 +497,18 @@ func BenchmarkAddClauses(b *testing.B) {
 		b.StopTimer()
 	}
 }
+
+// BenchmarkBlockSolution measures how long it takes to add a clause negating
+// the last solution.
+func BenchmarkBlockSolution(b *testing.B) {
+	b.StopTimer()
+	solution := formulaTests[benchTest].expected
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p, _ := New(nil)
+		p.AddClauses(formulaTests[benchTest].formula)
+		b.StartTimer()
+		p.BlockSolution(solution)
+		b.StopTimer()
+	}
+}

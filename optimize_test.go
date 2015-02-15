@@ -19,8 +19,9 @@ type parameters struct {
 }
 
 type arguments struct {
-	k, status int
-	solution  []bool
+	k        int
+	status   Status
+	solution Solution
 }
 
 type minimizer struct {
@@ -40,7 +41,7 @@ func (m *minimizer) LowerBound() int { return m.params.lower }
 
 func (m *minimizer) UpperBound() int { return m.params.upper }
 
-func (m *minimizer) IsFeasible(k int) (status int, solution []bool) {
+func (m *minimizer) IsFeasible(k int) (status Status, solution Solution) {
 	if k < from {
 		m.t.Errorf("k too low: %d", k)
 	}
@@ -55,7 +56,7 @@ func (m *minimizer) IsFeasible(k int) (status int, solution []bool) {
 	return
 }
 
-func (m *minimizer) RecordSolution(k, status int, solution []bool) {
+func (m *minimizer) RecordSolution(k int, status Status, solution Solution) {
 	m.args <- arguments{k, status, solution}
 }
 

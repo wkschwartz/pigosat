@@ -28,14 +28,33 @@ var Version = SemanticVersion{0, 4, 0, "", 0}
 // PicosatVersion is the version string from the underlying Picosat library.
 const PicosatVersion = "960"
 
+// Argument/result types for Pigosat methods.
+
+// Literals describe the variables in the formula. A positive value indicates
+// the variable must be true; negative indicates it must be false. Variables
+// should be indexed from one. The zero literal indicates the end of a clause.
+type Literal int32
+// Clauses are slices of literals ORed together. An optional zero ends a clause,
+// even in the middle of a slice; [1, 0, 2] is the same as [1, 0] is the same as
+// [1].
+type Clause []Literal
+// Formulas are slices of Clauses ANDed together.
+type Formula []Clause
+// Solutions are indexed by variable and return the truth value of the given
+// variable. The zeroth element has no meaning and is always false.
+type Solution []bool
+// Statuses are returned by Pigosat.Solve to indicate success or failure.
+type Status int
+
+
 // Return values for Pigosat.Solve's status.
 const (
 	// PicoSAT cannot determine the satisfiability of the formula.
-	Unknown int = C.PICOSAT_UNKNOWN
+	Unknown Status = C.PICOSAT_UNKNOWN
 	// The formula is satisfiable.
-	Satisfiable int = C.PICOSAT_SATISFIABLE
+	Satisfiable Status = C.PICOSAT_SATISFIABLE
 	// The formula cannot be satisfied.
-	Unsatisfiable int = C.PICOSAT_UNSATISFIABLE
+	Unsatisfiable Status = C.PICOSAT_UNSATISFIABLE
 )
 
 // Struct Pigosat must be created with New and stores the state of the
@@ -188,15 +207,14 @@ func (p *Pigosat) Seconds() time.Duration {
 	return time.Duration(float64(C.picosat_seconds(p.p)) * float64(time.Second))
 }
 
-// AddClauses adds a list (as a slice) of clauses (the sub-slices). Each clause
-// is a list of integers called literals. The absolute value of the literal i is
+// AddClauses adds a slice of clauses, each of which are a slice of literals.
+// Each clause is a list of integers called literals. The absolute value of the literal i is
 // the subscript for some variable x_i. If the literal is positive, x_i must end
 // up being true when the formula is solved. If the literal is negative, it must
 // end up false. Each clause ORs the literals together. All the clauses are
-// ANDed together. Literals cannot be zero: a zero in the middle of a slice ends
-// the clause, and causes AddClauses to skip reading the rest of the slice. Nil
-// slices are ignored and skipped.
-func (p *Pigosat) AddClauses(clauses [][]int32) {
+// ANDed together. An optional zero ends a clause, even in the middle of a
+// slice; [1, 0, 2] is the same as [1, 0] is the same as [1].
+func (p *Pigosat) AddClauses(clauses Formula) {
 	defer p.ready(false)()
 	var count int
 	for _, clause := range clauses {
@@ -226,7 +244,7 @@ func (p *Pigosat) Print(file *os.File) error {
 
 // blocksol adds the inverse of the solution to the clauses.
 // This private method does not acquire the lock or check if p is nil.
-func (p *Pigosat) blocksol(sol []bool) {
+func (p *Pigosat) blocksol(sol Solution) {
 	n := C.picosat_variables(p.p)
 	clause := make([]C.int, n+1)
 	for i := C.int(1); i <= n; i++ {
@@ -248,17 +266,17 @@ func (p *Pigosat) blocksol(sol []bool) {
 //    for status, solution := p.Solve(); status == Satisfiable; status, solution = p.Solve() {
 //        // Do stuff with status, solution
 //    }
-func (p *Pigosat) Solve() (status int, solution []bool) {
+func (p *Pigosat) Solve() (status Status, solution Solution) {
 	defer p.ready(false)()
 	// int picosat_sat (PicoSAT *, int decision_limit);
-	status = int(C.picosat_sat(p.p, -1))
+	status = Status(C.picosat_sat(p.p, -1))
 	if status == Unsatisfiable || status == Unknown {
 		return
 	} else if status != Satisfiable {
 		panic(fmt.Errorf("Unknown sat status: %d", status))
 	}
 	n := int(C.picosat_variables(p.p)) // Calling Pigosat.Variables deadlocks
-	solution = make([]bool, n+1)
+	solution = make(Solution, n+1)
 	for i := 1; i <= n; i++ {
 		// int picosat_deref (PicoSAT *, int lit);
 		if val := C.picosat_deref(p.p, C.int(i)); val > 0 {
@@ -272,17 +290,17 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 }
 
 // Res returns Solve's last status, or Unknown if Solve hasn't yet been called.
-func (p *Pigosat) Res() (status int) {
+func (p *Pigosat) Res() (status Status) {
 	defer p.ready(true)()
 	// int picosat_res (PicoSAT *);
-	return int(C.picosat_res(p.p))
+	return Status(C.picosat_res(p.p))
 }
 
 // BlockSolution adds a clause to the formula ruling out a given solution. It is
 // a no-op if p is nil and returns an error if the solution is the wrong
 // length. There is no need to call BlockSolution after calling Pigosat.Solve,
 // which calls it automatically for every Satisfiable solution.
-func (p *Pigosat) BlockSolution(solution []bool) error {
+func (p *Pigosat) BlockSolution(solution Solution) error {
 	defer p.ready(false)()
 	if n := int(C.picosat_variables(p.p)); len(solution) != n+1 {
 		return fmt.Errorf("solution length %d, but have %d variables",

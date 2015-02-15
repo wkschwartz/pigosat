@@ -271,6 +271,13 @@ func (p *Pigosat) Solve() (status int, solution []bool) {
 	return
 }
 
+// Res returns Solve's last status, or Unknown if Solve hasn't yet been called.
+func (p *Pigosat) Res() (status int) {
+	defer p.ready(true)()
+	// int picosat_res (PicoSAT *);
+	return int(C.picosat_res(p.p))
+}
+
 // BlockSolution adds a clause to the formula ruling out a given solution. It is
 // a no-op if p is nil and returns an error if the solution is the wrong
 // length. There is no need to call BlockSolution after calling Pigosat.Solve,

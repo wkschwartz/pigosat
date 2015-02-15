@@ -226,13 +226,18 @@ func TestFormulas(t *testing.T) {
 	}
 }
 
-func TestIterSolve(t *testing.T) {
-	var status int
+// TestIterSolveRes tests that Pigosat.Solve works as an iterator and that
+// Pigosat.Res returns Solve's last status.
+func TestIterSolveRes(t *testing.T) {
+	var status, res int
 	var this, last []bool // solutions
 	for i, ft := range formulaTests {
 		p, _ := New(nil)
 		p.AddClauses(ft.formula)
 		count := 0
+		if res = p.Res(); res != Unknown {
+			t.Errorf("Test %d: Res = %d before Solve called", i, res)
+		}
 		for status, this = p.Solve(); status == Satisfiable; status, this = p.Solve() {
 			if !evaluate(ft.formula, this) {
 				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
@@ -241,11 +246,17 @@ func TestIterSolve(t *testing.T) {
 			if equal(this, last) {
 				t.Errorf("Test %d: Duplicate solution: %v", i, this)
 			}
+			if res = p.Res(); res != status {
+				t.Errorf("Test %d: Status = %d != %d = Res", i, status, res)
+			}
 			last = this
 			count++
 		}
 		if count < 2 && ft.status == Satisfiable && !ft.onlyOne {
 			t.Errorf("Test %d: Only one solution", i)
+		}
+		if res = p.Res(); res != Unsatisfiable {
+			t.Errorf("Test %d: Res = %d after Solve finished", i, res)
 		}
 	}
 }

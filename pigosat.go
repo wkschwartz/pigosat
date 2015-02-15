@@ -34,18 +34,21 @@ const PicosatVersion = "960"
 // the variable must be true; negative indicates it must be false. Variables
 // should be indexed from one. The zero literal indicates the end of a clause.
 type Literal int32
+
 // Clauses are slices of literals ORed together. An optional zero ends a clause,
 // even in the middle of a slice; [1, 0, 2] is the same as [1, 0] is the same as
 // [1].
 type Clause []Literal
+
 // Formulas are slices of Clauses ANDed together.
 type Formula []Clause
+
 // Solutions are indexed by variable and return the truth value of the given
 // variable. The zeroth element has no meaning and is always false.
 type Solution []bool
+
 // Statuses are returned by Pigosat.Solve to indicate success or failure.
 type Status int
-
 
 // Return values for Pigosat.Solve's status.
 const (
@@ -208,12 +211,12 @@ func (p *Pigosat) Seconds() time.Duration {
 }
 
 // AddClauses adds a slice of clauses, each of which are a slice of literals.
-// Each clause is a list of integers called literals. The absolute value of the literal i is
-// the subscript for some variable x_i. If the literal is positive, x_i must end
-// up being true when the formula is solved. If the literal is negative, it must
-// end up false. Each clause ORs the literals together. All the clauses are
-// ANDed together. An optional zero ends a clause, even in the middle of a
-// slice; [1, 0, 2] is the same as [1, 0] is the same as [1].
+// Each clause is a list of integers called literals. The absolute value of the
+// literal i is the subscript for some variable x_i. If the literal is positive,
+// x_i must end up being true when the formula is solved. If the literal is
+// negative, it must end up false. Each clause ORs the literals together. All
+// the clauses are ANDed together. An optional zero ends a clause, even in the
+// middle of a slice; [1, 0, 2] is the same as [1, 0] is the same as [1].
 func (p *Pigosat) AddClauses(clauses Formula) {
 	defer p.ready(false)()
 	var count int

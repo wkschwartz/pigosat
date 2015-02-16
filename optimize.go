@@ -21,12 +21,12 @@ type Minimizer interface {
 	// any set of constraints it likes as long as there is a unique integer K
 	// such that k < K implies IsFeasible(k) returns status Unsatisfiable and
 	// k >= K implies IsFeasible(k) returns status Satisfiable.
-	IsFeasible(k int) (status int, solution []bool)
+	IsFeasible(k int) (status Status, solution Solution)
 
 	// RecordSolution allows types implementing this interface to store
 	// solutions for after minimization has finished. Must be safe for parallel
 	// use.
-	RecordSolution(k, status int, solution []bool)
+	RecordSolution(k int, status Status, solution Solution)
 }
 
 // Minimize finds the value min that minimizes Minimizer m. If the value can be

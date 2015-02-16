@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-// abs takes the absolute value of an int32 and casts it to int.
-func abs(x int32) int {
+// abs takes the absolute value of an Literal and casts it to int.
+func abs(x Literal) int {
 	if x < 0 {
 		return int(-x)
 	}
@@ -19,7 +19,7 @@ func abs(x int32) int {
 }
 
 // equal returns true if the two slices have the same contents.
-func equal(x, y []bool) bool {
+func equal(x, y Solution) bool {
 	if len(x) != len(y) {
 		return false
 	}
@@ -33,7 +33,7 @@ func equal(x, y []bool) bool {
 
 // Evaluate a formula when the variables take on the values given by the
 // solution.
-func evaluate(formula [][]int32, solution []bool) bool {
+func evaluate(formula Formula, solution Solution) bool {
 	var c bool // The value for the clause
 	var index int
 	for _, clause := range formula {
@@ -61,11 +61,11 @@ func evaluate(formula [][]int32, solution []bool) bool {
 }
 
 type formulaTest struct {
-	formula   [][]int32
+	formula   Formula
 	variables int // count
 	clauses   int // count
-	status    int
-	expected  []bool // solution
+	status    Status
+	expected  Solution
 	onlyOne   bool   // No solution other than `expected` could satisfy
 	dimacs    string // DIMACS-format CNF
 }
@@ -74,15 +74,15 @@ var formulaTests = []formulaTest{
 	// The first three tests are cribbed from Ilan Schnell's Pycosat. See
 	// https://github.com/ContinuumIO/pycosat. In particular, these are from
 	// commit d81df1e in test_pycosat.py.
-	0: {[][]int32{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
+	0: {Formula{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
 		5, 3, Satisfiable,
-		[]bool{false, true, false, false, false, true}, false,
+		Solution{false, true, false, false, false, true}, false,
 		`p cnf 5 3
 1 4 -5 0
 -1 3 4 5 0
 -3 -4 0
 `},
-	1: {[][]int32{{-1}, {1}},
+	1: {Formula{{-1}, {1}},
 		1, 2, Unsatisfiable,
 		nil, false,
 		`p cnf 1 3
@@ -90,18 +90,18 @@ var formulaTests = []formulaTest{
 1 0
 0
 `},
-	2: {[][]int32{{-1, 2}, {-1, -2}, {1, -2}},
+	2: {Formula{{-1, 2}, {-1, -2}, {1, -2}},
 		2, 3, Satisfiable,
-		[]bool{false, false, false}, true,
+		Solution{false, false, false}, true,
 		`p cnf 2 3
 1 -2 0
 -1 2 0
 -1 -2 0
 `},
 	// For testing that empty clauses are skipped and 0s end clauses
-	3: {[][]int32{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
+	3: {Formula{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
 		5, 3, Satisfiable,
-		[]bool{false, true, false, false, false, true}, false,
+		Solution{false, true, false, false, false, true}, false,
 		`p cnf 5 3
 1 4 -5 0
 -1 3 4 5 0
@@ -111,7 +111,7 @@ var formulaTests = []formulaTest{
 	// given 2011-01-24, pp. 23-48,
 	// http://fmv.jku.at/biere/talks/Biere-TPTPA11.pdf
 	// From "DIMACS example 1"
-	4: {[][]int32{{-2}, {-1, -3}, {1, 2}, {2, 3}},
+	4: {Formula{{-2}, {-1, -3}, {1, 2}, {2, 3}},
 		3, 4, Unsatisfiable, nil, false,
 		`p cnf 3 6
 -2 0
@@ -122,15 +122,15 @@ var formulaTests = []formulaTest{
 2 3 0
 `},
 	// From "Satisfying Assignments Example 2"
-	5: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}},
+	5: {Formula{{1, 2}, {-1, 2}, {-2, 1}},
 		2, 3, Satisfiable,
-		[]bool{false, true, true}, true,
+		Solution{false, true, true}, true,
 		`p cnf 2 3
 1 2 0
 1 -2 0
 -1 2 0
 `},
-	6: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}, {-1}},
+	6: {Formula{{1, 2}, {-1, 2}, {-2, 1}, {-1}},
 		2, 4, Unsatisfiable, nil, false,
 		`p cnf 2 4
 -1 0
@@ -138,7 +138,7 @@ var formulaTests = []formulaTest{
 1 -2 0
 -1 2 0
 `},
-	7: {[][]int32{{1, 2}, {-1, 2}, {-2, 1}, {-2}},
+	7: {Formula{{1, 2}, {-1, 2}, {-2, 1}, {-2}},
 		2, 4, Unsatisfiable, nil, false,
 		`p cnf 2 4
 -2 0
@@ -147,7 +147,7 @@ var formulaTests = []formulaTest{
 -1 2 0
 `},
 	// From "ex3.cnf"
-	8: {[][]int32{{1, 2, 3}, {1, 2, -3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
+	8: {Formula{{1, 2, 3}, {1, 2, -3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
 		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {1, 4}},
 		6, 10, Unsatisfiable, nil, false,
 		`p cnf 6 10
@@ -163,10 +163,10 @@ var formulaTests = []formulaTest{
 -1 -4 0
 `},
 	// From "ex4.cnf"
-	9: {[][]int32{{1, 2, 3}, {1, 2 - 3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
+	9: {Formula{{1, 2, 3}, {1, 2 - 3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
 		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {-1, 4}, {-1, -4}},
 		6, 11, Satisfiable,
-		[]bool{false, false, false, true, true, false, false}, false,
+		Solution{false, false, false, true, true, false, false}, false,
 		`p cnf 6 10
 1 2 3 0
 1 -2 3 0
@@ -190,8 +190,8 @@ func init() {
 	}
 }
 
-func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest, status int,
-	solution []bool) {
+func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest,
+	status Status, solution Solution) {
 	if status != ft.status {
 		t.Errorf("Test %d: Expected status %d but got %d", i, ft.status, status)
 	}
@@ -229,8 +229,8 @@ func TestFormulas(t *testing.T) {
 // TestIterSolveRes tests that Pigosat.Solve works as an iterator and that
 // Pigosat.Res returns Solve's last status.
 func TestIterSolveRes(t *testing.T) {
-	var status, res int
-	var this, last []bool // solutions
+	var status, res Status
+	var this, last Solution
 	for i, ft := range formulaTests {
 		p, _ := New(nil)
 		p.AddClauses(ft.formula)
@@ -262,12 +262,12 @@ func TestIterSolveRes(t *testing.T) {
 }
 
 func TestBlockSolution(t *testing.T) {
-	var status int
+	var status Status
 	for i, ft := range formulaTests {
 		p, _ := New(nil)
 
 		// Test bad inputs: one too short (remember sol[0] is always blank)
-		solution := make([]bool, p.Variables())
+		solution := make(Solution, p.Variables())
 		if err := p.BlockSolution(solution); err == nil {
 			t.Errorf("Test %d: Expected error when solution too short", i)
 		}
@@ -403,7 +403,7 @@ func TestUninitializedOrDeleted(t *testing.T) {
 	b.delete()
 	for name, p := range map[string]*Pigosat{"uninit": a, "deleted": b} {
 		assertPanics(t, name, "AddClauses", func() {
-			p.AddClauses([][]int32{{1}, {2}})
+			p.AddClauses(Formula{{1}, {2}})
 		})
 		assertPanics(t, name, "Variables", func() { p.Variables() })
 		assertPanics(t, name, "AddedOriginalClauses", func() {
@@ -412,7 +412,7 @@ func TestUninitializedOrDeleted(t *testing.T) {
 		assertPanics(t, name, "Seconds", func() { p.Seconds() })
 		assertPanics(t, name, "Solve", func() { p.Solve() })
 		assertPanics(t, name, "BlockSolution", func() {
-			p.BlockSolution([]bool{})
+			p.BlockSolution(Solution{})
 		})
 		assertPanics(t, name, "Print", func() { p.Print(nil) })
 	}
@@ -448,7 +448,7 @@ func TestPrint(t *testing.T) {
 // This is the example from the README.
 func Example_readme() {
 	p, _ := New(nil)
-	p.AddClauses([][]int32{{1, 2}, {1}, {-2}})
+	p.AddClauses(Formula{{1, 2}, {1}, {-2}})
 	fmt.Printf("# variables == %d\n", p.Variables())
 	fmt.Printf("# clauses == %d\n", p.AddedOriginalClauses())
 	status, solution := p.Solve()

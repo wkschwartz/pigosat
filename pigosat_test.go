@@ -61,13 +61,14 @@ func evaluate(formula Formula, solution Solution) bool {
 }
 
 type formulaTest struct {
-	formula   Formula
-	variables int // count
-	clauses   int // count
-	status    Status
-	expected  Solution
-	onlyOne   bool   // No solution other than `expected` could satisfy
-	dimacs    string // DIMACS-format CNF
+	formula      Formula
+	variables    int // count
+	clauses      int // count
+	status       Status
+	expected     Solution
+	onlyOne      bool   // No solution other than `expected` could satisfy
+	inconsistent bool   // Has an intentionally empty clause
+	dimacs       string // DIMACS-format CNF
 }
 
 var formulaTests = []formulaTest{
@@ -76,7 +77,7 @@ var formulaTests = []formulaTest{
 	// commit d81df1e in test_pycosat.py.
 	0: {Formula{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}},
 		5, 3, Satisfiable,
-		Solution{false, true, false, false, false, true}, false,
+		Solution{false, true, false, false, false, true}, false, false,
 		`p cnf 5 3
 1 4 -5 0
 -1 3 4 5 0
@@ -84,7 +85,7 @@ var formulaTests = []formulaTest{
 `},
 	1: {Formula{{-1}, {1}},
 		1, 2, Unsatisfiable,
-		nil, false,
+		nil, false, false,
 		`p cnf 1 3
 -1 0
 1 0
@@ -92,7 +93,7 @@ var formulaTests = []formulaTest{
 `},
 	2: {Formula{{-1, 2}, {-1, -2}, {1, -2}},
 		2, 3, Satisfiable,
-		Solution{false, false, false}, true,
+		Solution{false, false, false}, true, false,
 		`p cnf 2 3
 1 -2 0
 -1 2 0
@@ -101,7 +102,7 @@ var formulaTests = []formulaTest{
 	// For testing that empty clauses are skipped and 0s end clauses
 	3: {Formula{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
 		5, 3, Satisfiable,
-		Solution{false, true, false, false, false, true}, false,
+		Solution{false, true, false, false, false, true}, false, false,
 		`p cnf 5 3
 1 4 -5 0
 -1 3 4 5 0
@@ -112,7 +113,7 @@ var formulaTests = []formulaTest{
 	// http://fmv.jku.at/biere/talks/Biere-TPTPA11.pdf
 	// From "DIMACS example 1"
 	4: {Formula{{-2}, {-1, -3}, {1, 2}, {2, 3}},
-		3, 4, Unsatisfiable, nil, false,
+		3, 4, Unsatisfiable, nil, false, false,
 		`p cnf 3 6
 -2 0
 1 0
@@ -124,14 +125,14 @@ var formulaTests = []formulaTest{
 	// From "Satisfying Assignments Example 2"
 	5: {Formula{{1, 2}, {-1, 2}, {-2, 1}},
 		2, 3, Satisfiable,
-		Solution{false, true, true}, true,
+		Solution{false, true, true}, true, false,
 		`p cnf 2 3
 1 2 0
 1 -2 0
 -1 2 0
 `},
 	6: {Formula{{1, 2}, {-1, 2}, {-2, 1}, {-1}},
-		2, 4, Unsatisfiable, nil, false,
+		2, 4, Unsatisfiable, nil, false, false,
 		`p cnf 2 4
 -1 0
 1 2 0
@@ -139,7 +140,7 @@ var formulaTests = []formulaTest{
 -1 2 0
 `},
 	7: {Formula{{1, 2}, {-1, 2}, {-2, 1}, {-2}},
-		2, 4, Unsatisfiable, nil, false,
+		2, 4, Unsatisfiable, nil, false, false,
 		`p cnf 2 4
 -2 0
 1 2 0
@@ -149,7 +150,7 @@ var formulaTests = []formulaTest{
 	// From "ex3.cnf"
 	8: {Formula{{1, 2, 3}, {1, 2, -3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
 		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {1, 4}},
-		6, 10, Unsatisfiable, nil, false,
+		6, 10, Unsatisfiable, nil, false, false,
 		`p cnf 6 10
 1 2 3 0
 1 2 -3 0
@@ -166,7 +167,7 @@ var formulaTests = []formulaTest{
 	9: {Formula{{1, 2, 3}, {1, 2 - 3}, {1, -2, 3}, {1, -2, -3}, {4, 5, 6},
 		{4, 5, -6}, {4, -5, 6}, {4, -5, -6}, {-1, -4}, {-1, 4}, {-1, -4}},
 		6, 11, Satisfiable,
-		Solution{false, false, false, true, true, false, false}, false,
+		Solution{false, false, false, true, true, false, false}, false, false,
 		`p cnf 6 10
 1 2 3 0
 1 -2 3 0
@@ -178,6 +179,12 @@ var formulaTests = []formulaTest{
 -1 -4 0
 -1 4 0
 -1 -4 0
+`},
+	// To test Inconsistent, we need an intetionally empty clause
+	10: {Formula{{1}, {0}}, 1, 2, Unsatisfiable, nil, false, true,
+		`p cnf 1 2
+1 0
+0
 `},
 }
 
@@ -441,6 +448,24 @@ func TestPrint(t *testing.T) {
 		if s := string(buf); s != ft.dimacs {
 			t.Errorf("Test %d: expected >>>\n%s<<< but got >>>\n%s<<<", i,
 				ft.dimacs, s)
+		}
+	}
+}
+
+func TestInconsistent(t *testing.T) {
+	for i, ft := range formulaTests {
+		p, _ := New(nil)
+		p.AddClauses(ft.formula)
+		if p.Inconsistent() {
+			t.Errorf("Test %d: Not solved yet but already inconsistent", i)
+		}
+		status, _ := p.Solve()
+		if inc := p.Inconsistent(); ft.inconsistent != inc {
+			t.Errorf("Test %d: Inconsistency: expected %v got %v", i,
+				ft.inconsistent, inc)
+		}
+		if ft.inconsistent && status != Unsatisfiable {
+			t.Errorf("Test %d: inconsistent but not unsatisfiable", i)
 		}
 	}
 }

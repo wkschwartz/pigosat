@@ -16,6 +16,7 @@ import "C"
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"runtime"
 	"sync"
 	"syscall"
@@ -231,6 +232,195 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 		// int picosat_add_lits (PicoSAT *, int * lits);
 		C.picosat_add_lits(p.p, (*C.int)(&clause[0]))
 	}
+}
+
+// You can add arbitrary many assumptions before the next Solve().
+// This is similar to the using assumptions in MiniSAT, except that you do
+// not have to collect all your assumptions yourself.  In PicoSAT you can
+// add one after the other before the next call to Solve().
+//
+// These assumptions can be seen as adding unit clauses with those
+// assumptions as literals.  However these assumption clauses are only valid
+// for exactly the next call to Solve().  And will be removed
+// afterwards, e.g. in future calls to Solve() after the next one they
+// are not assumed, unless they are assumed again through Assume().
+//
+// More precisely, assumptions actually remain valid even after the next
+// call to Solve() returns.  Valid means they remain 'assumed' until a
+// call to AddClauses(), Assume(), or another Solve(),
+// following the first Solve().  They need to stay valid for
+// FailedAssumptions() to return correct values.
+//
+// Example:
+//
+//   p.Assume(1)                 // assume unit clause '1 0'
+//   p.Assume(-2)                // additionally assume clause '-2 0'
+//   res, solution := p.Solve()  // assumes 1 and -2 to hold
+//
+//   if res == Unsatisfiable {
+//       if p.FailedAssumption(1) {
+//           // unit clause '1 0' was necessary to derive UNSAT
+//		 }
+//       if p.FailedAssumption(-2) {
+//           // unit clause '-2 0' was necessary to derive UNSAT
+//       }
+//       // at least one but also both could be necessary
+//
+//       p.Assume(17)  // previous assumptions are removed
+//                     // now assume unit clause '17 0' for
+//                     // the next call to Solve()
+//
+//       // adding a new clause, actually the first literal of
+//       // a clause would also make the assumptions used in the previous
+//       // call to Solve() invalid.
+//
+//       // The first two assumptions above are not assumed anymore.  Only
+//       // the assumptions, since the last call to Solve() returned
+//       // are assumed, e.g. the unit clause '17 0'.
+//
+//       res, solution = p.Solve()
+//   } else if res == Satisfiable {
+//       // now the assignment is valid and we can call Solution()
+//
+//       // solution = p.Solution()
+//
+//       // previous two assumptions are still valid
+//
+//       // would become invalid if AddClauses() or Assume() is
+//       // called here, but we immediately call Solve().  Now when
+//       // entering Solve() the solver knows that the previous call
+//       // returned SAT and it can safely reset the previous assumptions
+//
+//       res, solution = p.Solve()
+//   } else  {
+//       // res == Unknown
+//
+//       // assumptions valid, but assignment invalid
+//       // except for top level assigned literals which
+//       // necessarily need to have this value if the formula is SAT
+//
+//       // as above the solver nows that the previous call returned Unknown
+//       // and will before doing anything else reset assumptions
+//
+//       p.Solve()
+//   }
+func (p *Pigosat) Assume(lit Literal) {
+	defer p.ready(false)()
+	C.picosat_assume(p.p, C.int(lit))
+}
+
+// Returns non zero if the literal is a failed assumption, which is defined
+// as an assumption used to derive unsatisfiability.  This is as accurate as
+// generating core literals, but still of course is an overapproximation of
+// the set of assumptions really necessary.  The technique does not need
+// clausal core generation nor tracing to be enabled and thus can be much
+// more effective.  The function can only be called as long the current
+// assumptions are valid.  See Assume() for more details.
+func (p *Pigosat) FailedAssumption(lit Literal) bool {
+	// Will SIGABRT if user calls this without the solver being
+	// in the Unsatisfiable state
+	if p.Res() != Unsatisfiable {
+		return false
+	}
+	defer p.ready(true)()
+	failed := C.picosat_failed_assumption(p.p, C.int(lit)) > 0
+	return failed
+}
+
+// Returns a list of failed assumption in the last call to
+// Solve(). It only makes sense if the last call to Solve()
+// returned Unsatisfiable.
+func (p *Pigosat) FailedAssumptions() []Literal {
+	if p.Res() != Unsatisfiable {
+		return nil
+	}
+	defer p.ready(true)()
+
+	litPtr := C.picosat_failed_assumptions(p.p)
+	return p.litArrayToSlice(litPtr)
+}
+
+// Converts a 0-terminated array of literal results to a slice.
+// Does not acquire internal locks.
+func (p *Pigosat) litArrayToSlice(litPtr *C.int) []Literal {
+	// It should be reasonable to use the number of vars in
+	// the solver as the max array size, since we aren't tracking
+	// the active number of assumptions.
+	size := int(C.picosat_variables(p.p))
+
+	var cints []C.int
+	header := (*reflect.SliceHeader)(unsafe.Pointer(&cints))
+	header.Cap = size
+	header.Len = size
+	header.Data = uintptr(unsafe.Pointer(litPtr))
+
+	// The returned int pointer is both temporary, and larger than
+	// needed, so we need to copy the real values into a new slice,
+	// up until the terminator.
+	ints := []Literal{}
+	for _, cint := range cints {
+		// break at the first sign of the 0 terminator.
+		if cint == 0 {
+			break
+		}
+		ints = append(ints, Literal(cint))
+	}
+	return ints
+}
+
+// Compute one maximal subset of satisfiable assumptions. You need to set
+// the assumptions, call 'Solve()' before calling this function.
+// The result is a list of assumptions that consistently can be asserted
+// at the same time.  Before returing the library 'reassumes' all assumptions.
+//
+// It could be beneficial to set the default phase of assumptions
+// to true (positive).  This can speed up the computation.
+func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
+	defer p.ready(false)()
+	if C.picosat_inconsistent(p.p) > 0 {
+		return []Literal{}
+	}
+	litPtr := C.picosat_maximal_satisfiable_subset_of_assumptions(p.p)
+	return p.litArrayToSlice(litPtr)
+}
+
+// This function assumes that you have set up all assumptions with
+// 'Assume()'.  Then it calls 'Solve()' internally unless the
+// formula is already inconsistent without assumptions, i.e.  it contains
+// the empty clause.  After that it extracts a maximal satisfiable subset of
+// assumptions.
+//
+// The result is a zero terminated maximal subset of consistent assumptions
+// or an empty list if the formula contains the empty clause and thus no
+// more maximal consistent subsets of assumptions can be extracted.  In the
+// first case, before returning, a blocking clause is added, that rules out
+// the result for the next call.
+//
+// NOTE: adding the blocking clause changes the CNF.
+//
+// So the following idiom
+//
+// var lits []Literal;
+// p.Assume(a1)
+// p.Assume(a2)
+// p.Assume(a3)
+// p.Assume(a4)
+// for mss := p.NextMaxSatisfiableAssumptions; len(mss) > 0; mss = p.NextMaxSatisfiableAssumptions() {
+//     ProcessResults(mss)
+// }
+//
+// can be used to iterate over all maximal consistent subsets of
+// the set of assumptions {a1,a2,a3,a4}.
+//
+// It could be beneficial to set the default phase of assumptions
+// to true (positive).  This might speed up the computation.
+func (p *Pigosat) NextMaxSatisfiableAssumptions() []Literal {
+	defer p.ready(false)()
+	if C.picosat_inconsistent(p.p) > 0 {
+		return []Literal{}
+	}
+	litPtr := C.picosat_next_maximal_satisfiable_subset_of_assumptions(p.p)
+	return p.litArrayToSlice(litPtr)
 }
 
 // Print appends the CNF in DIMACS format to the given file.

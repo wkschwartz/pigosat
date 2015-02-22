@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -381,6 +382,95 @@ func TestMeasureAllCalls(t *testing.T) {
 			t.Errorf("Test %d: Seconds with MeasureAllCalls should measure "+
 				"AddClauses, but p.Seconds() == %v", i, p.Seconds())
 		}
+	}
+}
+
+func TestAssume(t *testing.T) {
+	formula := Formula{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}}
+
+	successTests := []struct {
+		// The literals which should be assumed true/false
+		assumpts []Literal
+		// The number of solutions that we expect to produce
+		solutions int
+	}{
+		{[]Literal{1}, 10},
+		{[]Literal{2}, 9},
+		{[]Literal{3}, 6},
+		{[]Literal{4, 5}, 4},
+	}
+
+	var status Status
+	var sol Solution
+
+	for _, at := range successTests {
+		p, _ := New(nil)
+		p.AddClauses(formula)
+
+		count := 0
+		for {
+			for _, lit := range at.assumpts {
+				p.Assume(lit)
+			}
+			if status, sol = p.Solve(); status != Satisfiable {
+				break
+			}
+			p.BlockSolution(sol)
+			count++
+		}
+
+		if count != at.solutions {
+			t.Errorf("Expected %d solution(s) for assumptions %v; got %d",
+				at.solutions, at.assumpts, count)
+		}
+	}
+}
+
+func TestFailedAssumptions(t *testing.T) {
+	formula := Formula{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}}
+	assumpts := []Literal{3, 4, 5}
+	failed := []Literal{3, 4}
+
+	p, _ := New(nil)
+	p.AddClauses(formula)
+
+	for _, lit := range assumpts {
+		p.Assume(lit)
+	}
+
+	if status, _ := p.Solve(); status != Unsatisfiable {
+		t.Fatalf("Expected Solve to fail: %v (w/ assumptions %v)", formula, assumpts)
+	}
+
+	actual := p.FailedAssumptions()
+	if !reflect.DeepEqual(failed, actual) {
+		t.Fatalf("Expected failed assumptions did not match; %v != %v", failed, actual)
+	}
+
+	for _, f := range failed {
+		if !p.FailedAssumption(f) {
+			t.Errorf("Expected literal %v to be a failed assumption", f)
+		}
+	}
+
+	assumpts = p.MaxSatisfiableAssumptions()
+	if len(assumpts) < 2 {
+		t.Fatalf("Expected to find max satisfiable assumptions >= 2; got %d", len(assumpts))
+	}
+
+	count := 0
+	for {
+		assumpts = p.NextMaxSatisfiableAssumptions()
+		if len(assumpts) == 0 {
+			break
+		}
+		if reflect.DeepEqual(assumpts, failed) {
+			t.Fatalf("Should not be a failed assumption: %v", assumpts)
+		}
+		count++
+	}
+	if count != 2 {
+		t.Fatalf("Expected to find 2 max satisfiable assumptions; got %d", count)
 	}
 }
 

@@ -252,15 +252,14 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 }
 
 // Print appends the CNF in DIMACS format to the given file.
-func (p *Pigosat) Print(file *os.File) error {
+// func (p *Pigosat) Print(file *os.File) error {
+func (p *Pigosat) Print(w io.Writer) error {
 	defer p.ready(true)()
-	cfile, err := cfdopen(file, "a")
-	if err != nil {
+	return cFileWriterWrapper(w, func(cfile *C.FILE) error {
+		// void picosat_print (PicoSAT *, FILE *);
+		_, err := C.picosat_print(p.p, cfile)
 		return err
-	}
-	// void picosat_print (PicoSAT *, FILE *);
-	_, err = C.picosat_print(p.p, cfile)
-	return err
+	})
 }
 
 // blocksol adds the inverse of the solution to the clauses.

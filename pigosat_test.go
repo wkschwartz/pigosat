@@ -435,28 +435,18 @@ func TestUninitializedOrDeleted(t *testing.T) {
 }
 
 func TestPrint(t *testing.T) {
+	var buf bytes.Buffer
 	for i, ft := range formulaTests {
-		tmp, err := ioutil.TempFile("", "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			tmp.Close()
-			if err := os.Remove(tmp.Name()); err != nil {
-				t.Error(err)
-			}
-		}()
+		buf.Reset()
 		p, err := New(nil)
 		p.AddClauses(ft.formula)
-		p.Print(tmp)
-		// Now we make sure the file was written.
-		buf, err := ioutil.ReadFile(tmp.Name())
+		err = p.Print(&buf)
 		if err != nil {
 			t.Errorf("Test %d: Output file not written to: err=%v", i, err)
 		}
-		if s := string(buf); s != ft.dimacs {
+		if !equalDimacs(buf.String(), ft.dimacs) {
 			t.Errorf("Test %d: expected >>>\n%s<<< but got >>>\n%s<<<", i,
-				ft.dimacs, s)
+				ft.dimacs, buf.String())
 		}
 	}
 }

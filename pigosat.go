@@ -393,6 +393,7 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) error {
 	if err != nil {
 		return err
 	}
+	defer wp.Close()
 	defer rp.Close()
 
 	cfile, err := cfdopen(wp, "a")

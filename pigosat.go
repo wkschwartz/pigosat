@@ -9,12 +9,14 @@
 // p.Solve.
 package pigosat
 
-// #cgo CFLAGS: -DNDEBUG -O3
+// #cgo CFLAGS: -DNDEBUG -DTRACE -O3
 // #cgo windows CFLAGS: -DNGETRUSAGE -DNALLSIGNALS
 // #include "picosat.h" /* REMEMBER TO UPDATE PicosatVersion BELOW! */
 import "C"
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"sync"
@@ -98,6 +100,17 @@ type Options struct {
 	 * 'picosat_add' will trigger a call to 'getrusage'.
 	 */
 	MeasureAllCalls bool
+
+	// If you ever want to extract cores or proof traces with the current
+	// instance of Pigosat, then set this option true.
+	//
+	// NOTE, trace generation code is not necessarily included, e.g. if you
+	// build Pigosat with the 'no_trace' build tag, you do not get any results
+	// by trying to generate traces.
+	//
+	// After calling NewPigosat, if Pigosat was build with the 'no_trace' build
+	// tag, it will return an error.
+	EnableTrace bool
 }
 
 // cfdopen returns a C-level FILE*. mode should be as described in fdopen(3).
@@ -144,6 +157,11 @@ func New(options *Options) (*Pigosat, error) {
 		if options.MeasureAllCalls {
 			// void picosat_measure_all_calls (PicoSAT *);
 			C.picosat_measure_all_calls(p)
+		}
+		if options.EnableTrace {
+			if enabled := int(C.picosat_enable_trace_generation(p)); enabled == 0 {
+				return nil, errors.New("trace generation was not enabled in build")
+			}
 		}
 	}
 	pgo := &Pigosat{p: p, lock: new(sync.RWMutex)}
@@ -311,4 +329,51 @@ func (p *Pigosat) BlockSolution(solution Solution) error {
 	}
 	p.blocksol(solution)
 	return nil
+}
+
+// Write the clauses that were used in deriving the empty clause to a file
+// in DIMACS format.
+//
+// Requires that Pigosat was created with EnableTrace == true.
+func (p *Pigosat) WriteClausalCore(f io.Writer) error {
+	if p.Res() != Unsatisfiable {
+		return errors.New("expected to be in Unsatisfiable state")
+	}
+	defer p.ready(true)()
+	return cFileWriterWrapper(f, func(cfile *C.FILE) error {
+		// void picosat_write_clausal_core (PicoSAT *, FILE * core_file);
+		_, err := C.picosat_write_clausal_core(p.p, cfile)
+		return err
+	})
+}
+
+// A wrapper to take an io.Writer interface and feed it
+// the output from picosat functions that specifically
+// need a *C.FILE
+func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) error {
+	rp, wp, err := os.Pipe()
+	if err != nil {
+		return err
+	}
+	defer rp.Close()
+
+	cfile, err := cfdopen(wp, "a")
+	if err != nil {
+		return err
+	}
+
+	errChan := make(chan error)
+	go func() {
+		_, e := io.Copy(w, rp)
+		errChan <- e
+	}()
+
+	err = writeFn(cfile)
+	C.fflush(cfile)
+	wp.Close()
+	copyErr := <-errChan
+	if err != nil {
+		return err
+	}
+	return copyErr
 }

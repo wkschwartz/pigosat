@@ -3,9 +3,13 @@
 package pigosat
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 )
@@ -58,6 +62,18 @@ func evaluate(formula Formula, solution Solution) bool {
 		}
 	}
 	return true
+}
+
+func equalDimacs(d1, d2 string) bool {
+	// We can't rely on the DIMAC output having clauses
+	// in a consistent order. Enabled TRACE when compiling
+	// picosat, for instance, results in a different clause order.
+	// Better to compare the output as a sorted list of lines.
+	actual := strings.Split(d1, "\n")
+	expected := strings.Split(d2, "\n")
+	sort.Strings(actual)
+	sort.Strings(expected)
+	return reflect.DeepEqual(actual, expected)
 }
 
 type formulaTest struct {
@@ -441,6 +457,43 @@ func TestPrint(t *testing.T) {
 		if s := string(buf); s != ft.dimacs {
 			t.Errorf("Test %d: expected >>>\n%s<<< but got >>>\n%s<<<", i,
 				ft.dimacs, s)
+		}
+	}
+}
+
+func TestWriteClausalCore(t *testing.T) {
+	var buf bytes.Buffer
+	prefix := []byte(`p cnf`)
+
+	for i, ft := range formulaTests {
+		p, err := New(&Options{EnableTrace: true})
+		if err != nil {
+			t.SkipNow()
+		}
+		p.AddClauses(ft.formula)
+		status, _ := p.Solve()
+
+		buf.Reset()
+		err = p.WriteClausalCore(&buf)
+
+		// Only Unsatisfiable solutions should produce
+		// clausal cores
+		if err != nil {
+			if status == Unsatisfiable {
+				t.Errorf("Test %d: Error calling WriteClausalCore: %v", i, err)
+			}
+			continue
+		}
+
+		// The variable decisions could be different on different
+		// calls, unless each test Formula uses a specific set of
+		// assumptions to force the results.
+		// For now, just make sure the lib writes out a valid dimac
+		// format, which is probably good enough. We are only testing
+		// the API call behavior and not the values.
+		if !bytes.HasPrefix(buf.Bytes(), prefix) {
+			t.Errorf("Test %d: Expected Unsatisfiable clausal core to "+
+				"start with 'p cnf'; got %q", i, buf)
 		}
 	}
 }

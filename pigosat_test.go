@@ -498,6 +498,47 @@ func TestWriteClausalCore(t *testing.T) {
 	}
 }
 
+func TestWriteTrace(t *testing.T) {
+	var buf bytes.Buffer
+
+	for i, ft := range formulaTests {
+		p, err := New(&Options{EnableTrace: true})
+		if err != nil {
+			t.SkipNow()
+		}
+		p.AddClauses(ft.formula)
+		status, _ := p.Solve()
+
+		buf.Reset()
+		err = p.WriteCompactTrace(&buf)
+
+		// Only Unsatisfiable solutions should produce a trace
+		if err != nil {
+			if status == Unsatisfiable {
+				t.Errorf("Test %d: Error calling WriteCompactTrace: %v", i, err)
+			}
+			continue
+		}
+		if buf.Len() == 0 {
+			t.Errorf("Test %d: Expected Unsatisfiable formulat to produce a trace; got 0 bytes", i)
+		}
+
+		buf.Reset()
+		err = p.WriteExtendedTrace(&buf)
+
+		// Only Unsatisfiable solutions should produce a trace
+		if err != nil {
+			if status == Unsatisfiable {
+				t.Errorf("Test %d: Error calling WriteExtendedTrace: %v", i, err)
+			}
+			continue
+		}
+		if buf.Len() == 0 {
+			t.Errorf("Test %d: Expected Unsatisfiable formulat to produce a trace; got 0 bytes", i)
+		}
+	}
+}
+
 // This is the example from the README.
 func Example_readme() {
 	p, _ := New(nil)

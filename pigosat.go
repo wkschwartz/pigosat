@@ -347,6 +347,36 @@ func (p *Pigosat) WriteClausalCore(f io.Writer) error {
 	})
 }
 
+// Write a compact proof trace in TraceCheck format to a file.
+//
+// Requires that Pigosat was created with EnableTrace == true.
+func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
+	if p.Res() != Unsatisfiable {
+		return errors.New("expected to be in Unsatisfiable state")
+	}
+	defer p.ready(true)()
+	return cFileWriterWrapper(f, func(cfile *C.FILE) error {
+		// void picosat_write_compact_trace (PicoSAT *, FILE * trace_file);
+		_, err := C.picosat_write_compact_trace(p.p, cfile)
+		return err
+	})
+}
+
+// Write an extended proof trace in TraceCheck format to a file.
+//
+// Requires that Pigosat was created with EnableTrace == true.
+func (p *Pigosat) WriteExtendedTrace(f io.Writer) error {
+	if p.Res() != Unsatisfiable {
+		return errors.New("expected to be in Unsatisfiable state")
+	}
+	defer p.ready(true)()
+	return cFileWriterWrapper(f, func(cfile *C.FILE) error {
+		// void picosat_write_extended_trace (PicoSAT *, FILE * trace_file);
+		_, err := C.picosat_write_extended_trace(p.p, cfile)
+		return err
+	})
+}
+
 // A wrapper to take an io.Writer interface and feed it
 // the output from picosat functions that specifically
 // need a *C.FILE

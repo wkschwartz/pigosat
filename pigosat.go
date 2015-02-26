@@ -68,7 +68,7 @@ const (
 type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT
-	lock *sync.RWMutex
+	lock sync.RWMutex
 }
 
 // Struct Options contains optional settings for the Pigosat constructor. Zero
@@ -146,7 +146,7 @@ func New(options *Options) (*Pigosat, error) {
 			C.picosat_measure_all_calls(p)
 		}
 	}
-	pgo := &Pigosat{p: p, lock: new(sync.RWMutex)}
+	pgo := &Pigosat{p: p, lock: sync.RWMutex{}}
 	runtime.SetFinalizer(pgo, (*Pigosat).delete)
 	return pgo, nil
 }

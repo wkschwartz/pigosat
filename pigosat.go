@@ -234,75 +234,52 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 	}
 }
 
-// You can add arbitrary many assumptions before the next Solve().
-// This is similar to the using assumptions in MiniSAT, except that you do
-// not have to collect all your assumptions yourself.  In PicoSAT you can
-// add one after the other before the next call to Solve().
+// Assume adds a unit clause (i.e., a clause containing one literal) containing
+// just the given literal for just the next call to Solve. You can add arbitrary
+// many assumptions before the next Solve. After the next call to Solve, the
+// assumptions are removed.
 //
-// These assumptions can be seen as adding unit clauses with those
-// assumptions as literals.  However these assumption clauses are only valid
-// for exactly the next call to Solve().  And will be removed
-// afterwards, e.g. in future calls to Solve() after the next one they
-// are not assumed, unless they are assumed again through Assume().
-//
-// More precisely, assumptions actually remain valid even after the next
-// call to Solve() returns.  Valid means they remain 'assumed' until a
-// call to AddClauses(), Assume(), or another Solve(),
-// following the first Solve().  They need to stay valid for
-// FailedAssumptions() to return correct values.
+// More precisely, assumptions actually remain valid even after the next call to
+// Solve() returns. Valid means they remain 'assumed' until a call to
+// AddClauses(), Assume(), or another Solve(), following the first Solve().
+// They need to stay valid for FailedAssumptions() to return correct values.
 //
 // Example:
 //
-//   p.Assume(1)                 // assume unit clause '1 0'
-//   p.Assume(-2)                // additionally assume clause '-2 0'
-//   res, solution := p.Solve()  // assumes 1 and -2 to hold
+//   p.Assume(1)                // assume unit clause Clause{1, 0}
+//   p.Assume(-2)               // additionally assume unit clause Clause{-2, 0}
+//   res, solution := p.Solve() // assumes 1 and -2 to hold
 //
 //   if res == Unsatisfiable {
 //       if p.FailedAssumption(1) {
-//           // unit clause '1 0' was necessary to derive UNSAT
-//		 }
+//           // unit clause Clause{1, 0} was necessary to derive Unsatisfiable
+//       }
 //       if p.FailedAssumption(-2) {
-//           // unit clause '-2 0' was necessary to derive UNSAT
+//           // unit clause Clause{-2, 0} was necessary to derive Unsatisfiable
 //       }
 //       // at least one but also both could be necessary
 //
-//       p.Assume(17)  // previous assumptions are removed
-//                     // now assume unit clause '17 0' for
-//                     // the next call to Solve()
+//       p.Assume(17)  // Previous assumptions are removed. Now assume unit
+//                     // clause Clause{17, 0} for the next call to Solve().
 //
-//       // adding a new clause, actually the first literal of
-//       // a clause would also make the assumptions used in the previous
-//       // call to Solve() invalid.
-//
-//       // The first two assumptions above are not assumed anymore.  Only
-//       // the assumptions, since the last call to Solve() returned
-//       // are assumed, e.g. the unit clause '17 0'.
-//
-//       res, solution = p.Solve()
 //   } else if res == Satisfiable {
-//       // now the assignment is valid and we can call Solution()
+//       // The assumptions 1 and -2 hold, so the follow assertion succeeds.
+//       if !(solution[1] && !solution[2]) {
+//           panic("assertion failed")
+//       }
 //
-//       // solution = p.Solution()
-//
-//       // previous two assumptions are still valid
-//
-//       // would become invalid if AddClauses() or Assume() is
-//       // called here, but we immediately call Solve().  Now when
-//       // entering Solve() the solver knows that the previous call
-//       // returned SAT and it can safely reset the previous assumptions
-//
-//       res, solution = p.Solve()
+//       // Assumptions valid, as always, until calls to AddClauses(), etc.
+//       // Further, when entering Solve() the solver knows that the previous
+//       // call returned SAT and it can safely reset the previous assumptions.
 //   } else  {
 //       // res == Unknown
 //
-//       // assumptions valid, but assignment invalid
-//       // except for top level assigned literals which
-//       // necessarily need to have this value if the formula is SAT
+//       // Assumptions valid, but assignment invalid except for top level
+//       // assigned literals which necessarily need to have this value if the
+//       // formula is SAT
 //
-//       // as above the solver nows that the previous call returned Unknown
-//       // and will before doing anything else reset assumptions
-//
-//       p.Solve()
+//       // As above the solver knows that the previous call returned Unknown
+//       // and will reset assumptions before doing anything else.
 //   }
 func (p *Pigosat) Assume(lit Literal) {
 	defer p.ready(false)()

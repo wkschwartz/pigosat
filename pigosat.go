@@ -295,9 +295,8 @@ func (p *Pigosat) Assume(lit Literal) {
 // assumptions are valid.  See Assume() for more details.
 func (p *Pigosat) FailedAssumption(lit Literal) bool {
 	defer p.ready(true)()
-	// Will SIGABRT if user calls this without the solver being
-	// in the Unsatisfiable state
-	if p.Res() != Unsatisfiable {
+	// picoast_failed_assumption SIGABRTs if the following conditional is true
+	if p.Res() != Unsatisfiable || lit == 0 {
 		return false
 	}
 	return C.picosat_failed_assumption(p.p, C.int(lit)) != 0

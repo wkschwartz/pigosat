@@ -294,12 +294,12 @@ func (p *Pigosat) Assume(lit Literal) {
 // more effective.  The function can only be called as long the current
 // assumptions are valid.  See Assume() for more details.
 func (p *Pigosat) FailedAssumption(lit Literal) bool {
+	defer p.ready(true)()
 	// Will SIGABRT if user calls this without the solver being
 	// in the Unsatisfiable state
 	if p.Res() != Unsatisfiable {
 		return false
 	}
-	defer p.ready(true)()
 	return C.picosat_failed_assumption(p.p, C.int(lit)) != 0
 }
 
@@ -307,10 +307,10 @@ func (p *Pigosat) FailedAssumption(lit Literal) bool {
 // Solve(). It only makes sense if the last call to Solve()
 // returned Unsatisfiable.
 func (p *Pigosat) FailedAssumptions() []Literal {
+	defer p.ready(true)()
 	if p.Res() != Unsatisfiable {
 		return nil
 	}
-	defer p.ready(true)()
 
 	litPtr := C.picosat_failed_assumptions(p.p)
 	return p.litArrayToSlice(litPtr)

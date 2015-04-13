@@ -300,8 +300,7 @@ func (p *Pigosat) FailedAssumption(lit Literal) bool {
 		return false
 	}
 	defer p.ready(true)()
-	failed := C.picosat_failed_assumption(p.p, C.int(lit)) > 0
-	return failed
+	return C.picosat_failed_assumption(p.p, C.int(lit)) != 0
 }
 
 // Returns a list of failed assumption in the last call to
@@ -357,7 +356,7 @@ func (p *Pigosat) litArrayToSlice(litPtr *C.int) []Literal {
 // to true (positive).  This can speed up the computation.
 func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
 	defer p.ready(false)()
-	if C.picosat_inconsistent(p.p) > 0 {
+	if C.picosat_inconsistent(p.p) != 0 {
 		return []Literal{}
 	}
 	litPtr := C.picosat_maximal_satisfiable_subset_of_assumptions(p.p)
@@ -396,7 +395,7 @@ func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
 // to true (positive).  This might speed up the computation.
 func (p *Pigosat) NextMaxSatisfiableAssumptions() []Literal {
 	defer p.ready(false)()
-	if C.picosat_inconsistent(p.p) > 0 {
+	if C.picosat_inconsistent(p.p) != 0 {
 		return []Literal{}
 	}
 	litPtr := C.picosat_next_maximal_satisfiable_subset_of_assumptions(p.p)

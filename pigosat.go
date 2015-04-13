@@ -320,6 +320,9 @@ func (p *Pigosat) FailedAssumptions() []Literal {
 // Converts a 0-terminated array of literal results to a slice.
 // Does not acquire internal locks.
 func (p *Pigosat) litArrayToSlice(litPtr *C.int) []Literal {
+	if litPtr == C.NULL || *litPtr == 0 {
+		return []Literal{}
+	}
 	// It should be reasonable to use the number of vars in
 	// the solver as the max array size, since we aren't tracking
 	// the active number of assumptions.

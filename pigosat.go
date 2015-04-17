@@ -332,9 +332,7 @@ func (p *Pigosat) BlockSolution(solution Solution) error {
 // Requires that Pigosat was created with EnableTrace == true.
 func (p *Pigosat) WriteClausalCore(f io.Writer) error {
 	defer p.ready(true)()
-
-	res := Status(C.picosat_res(p.p))
-	if res != Unsatisfiable {
+	if Status(C.picosat_res(p.p)) != Unsatisfiable {
 		return errors.New("expected to be in Unsatisfiable state")
 	}
 
@@ -350,9 +348,7 @@ func (p *Pigosat) WriteClausalCore(f io.Writer) error {
 // Requires that Pigosat was created with EnableTrace == true.
 func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
 	defer p.ready(true)()
-
-	res := Status(C.picosat_res(p.p))
-	if res != Unsatisfiable {
+	if Status(C.picosat_res(p.p)) != Unsatisfiable {
 		return errors.New("expected to be in Unsatisfiable state")
 	}
 
@@ -368,9 +364,7 @@ func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
 // Requires that Pigosat was created with EnableTrace == true.
 func (p *Pigosat) WriteExtendedTrace(f io.Writer) error {
 	defer p.ready(true)()
-
-	res := Status(C.picosat_res(p.p))
-	if res != Unsatisfiable {
+	if Status(C.picosat_res(p.p)) != Unsatisfiable {
 		return errors.New("expected to be in Unsatisfiable state")
 	}
 

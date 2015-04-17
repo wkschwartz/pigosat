@@ -101,15 +101,10 @@ type Options struct {
 	 */
 	MeasureAllCalls bool
 
-	// If you ever want to extract cores or proof traces with the current
-	// instance of Pigosat, then set this option true.
-	//
-	// NOTE, trace generation code is not necessarily included, e.g. if you
-	// build Pigosat with the 'no_trace' build tag, you do not get any results
-	// by trying to generate traces.
-	//
-	// After calling NewPigosat, if Pigosat was build with the 'no_trace' build
-	// tag, it will return an error.
+	// If you want to extract cores or proof traces using WriteClausalCore,
+	// WriteCompactTrace, WriteExtendedTrace with the current instance of
+	// Pigosat, then set this option true. This option may increase memory
+	// usage.
 	EnableTrace bool
 }
 

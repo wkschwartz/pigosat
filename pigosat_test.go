@@ -438,9 +438,9 @@ func TestPrint(t *testing.T) {
 	var buf bytes.Buffer
 	for i, ft := range formulaTests {
 		buf.Reset()
-		p, err := New(nil)
+		p, _ := New(nil)
 		p.AddClauses(ft.formula)
-		err = p.Print(&buf)
+		err := p.Print(&buf)
 		if err != nil {
 			t.Errorf("Test %d: Output file not written to: err=%v", i, err)
 		}
@@ -456,15 +456,12 @@ func TestWriteClausalCore(t *testing.T) {
 	prefix := []byte(`p cnf`)
 
 	for i, ft := range formulaTests {
-		p, err := New(&Options{EnableTrace: true})
-		if err != nil {
-			t.SkipNow()
-		}
+		p, _ := New(&Options{EnableTrace: true})
 		p.AddClauses(ft.formula)
 		status, _ := p.Solve()
 
 		buf.Reset()
-		err = p.WriteClausalCore(&buf)
+		err := p.WriteClausalCore(&buf)
 
 		// Only Unsatisfiable solutions should produce
 		// clausal cores
@@ -492,15 +489,12 @@ func TestWriteTrace(t *testing.T) {
 	var buf bytes.Buffer
 
 	for i, ft := range formulaTests {
-		p, err := New(&Options{EnableTrace: true})
-		if err != nil {
-			t.SkipNow()
-		}
+		p, _ := New(&Options{EnableTrace: true})
 		p.AddClauses(ft.formula)
 		status, _ := p.Solve()
 
 		buf.Reset()
-		err = p.WriteCompactTrace(&buf)
+		err := p.WriteCompactTrace(&buf)
 
 		// Only Unsatisfiable solutions should produce a trace
 		if err != nil {

@@ -154,8 +154,9 @@ func New(options *Options) (*Pigosat, error) {
 			C.picosat_measure_all_calls(p)
 		}
 		if options.EnableTrace {
-			if enabled := int(C.picosat_enable_trace_generation(p)); enabled == 0 {
-				return nil, errors.New("trace generation was not enabled in build")
+			if int(C.picosat_enable_trace_generation(p)) == 0 {
+				// The cgo CFLAGS guarantee trace generation using -DTRACE.
+				panic("trace generation was not enabled in build")
 			}
 		}
 	}

@@ -391,18 +391,12 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) error {
 		return err
 	}
 
-	errChan := make(chan error)
-	go func() {
-		_, e := io.Copy(w, rp)
-		errChan <- e
-	}()
-
 	err = writeFn(cfile)
 	C.fflush(cfile)
 	wp.Close()
-	copyErr := <-errChan
 	if err != nil {
 		return err
 	}
-	return copyErr
+	_, err = io.Copy(w, rp)
+	return err
 }

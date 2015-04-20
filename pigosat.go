@@ -378,25 +378,35 @@ func (p *Pigosat) WriteExtendedTrace(f io.Writer) error {
 // A wrapper to take an io.Writer interface and feed it
 // the output from picosat functions that specifically
 // need a *C.FILE
-func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) error {
+func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
+	var wpClosed bool
 	rp, wp, err := os.Pipe()
 	if err != nil {
 		return err
 	}
-	defer wp.Close()
-	defer rp.Close()
+	close := func(f *os.File) {
+		if f != wp || !wpClosed {
+			if closeErr := f.Close(); closeErr != nil && err == nil {
+				err = closeErr
+			}
+		}
+	}
+	defer close(wp)
+	defer close(rp)
 
 	cfile, err := cfdopen(wp, "a")
 	if err != nil {
-		return err
+		return
 	}
-
-	err = writeFn(cfile)
-	C.fflush(cfile)
-	wp.Close()
-	if err != nil {
-		return err
+	if err = writeFn(cfile); err != nil {
+		return
+	}
+	if _, err = C.fflush(cfile); err != nil {
+		return
+	}
+	if err, wpClosed = wp.Close(), true; err != nil {
+		return
 	}
 	_, err = io.Copy(w, rp)
-	return err
+	return
 }

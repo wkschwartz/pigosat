@@ -286,13 +286,13 @@ func (p *Pigosat) Assume(lit Literal) {
 	C.picosat_assume(p.p, C.int(lit))
 }
 
-// Returns non zero if the literal is a failed assumption, which is defined
-// as an assumption used to derive unsatisfiability.  This is as accurate as
-// generating core literals, but still of course is an overapproximation of
-// the set of assumptions really necessary.  The technique does not need
-// clausal core generation nor tracing to be enabled and thus can be much
-// more effective.  The function can only be called as long the current
-// assumptions are valid.  See Assume() for more details.
+// Returns non zero if the literal is a failed assumption, which is defined as
+// an assumption used to derive unsatisfiability. This is as accurate as
+// generating core literals, but still of course is an overapproximation of the
+// set of assumptions really necessary. The technique does not need clausal core
+// generation nor tracing to be enabled and thus can be much more effective. The
+// function can only be called as long the current assumptions are valid. See
+// Assume() for more details.
 func (p *Pigosat) FailedAssumption(lit Literal) bool {
 	defer p.ready(true)()
 	// picoast_failed_assumption SIGABRTs if the following conditional is true
@@ -302,9 +302,8 @@ func (p *Pigosat) FailedAssumption(lit Literal) bool {
 	return C.picosat_failed_assumption(p.p, C.int(lit)) != 0
 }
 
-// Returns a list of failed assumption in the last call to
-// Solve(). It only makes sense if the last call to Solve()
-// returned Unsatisfiable.
+// Returns a list of failed assumption in the last call to Solve(). It only
+// makes sense if the last call to Solve() returned Unsatisfiable.
 func (p *Pigosat) FailedAssumptions() []Literal {
 	defer p.ready(true)()
 	if p.Res() != Unsatisfiable {
@@ -391,7 +390,7 @@ func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
 // the set of assumptions {a1,a2,a3,a4}.
 //
 // It could be beneficial to set the default phase of assumptions
-// to true (positive).  This might speed up the computation.
+// to true (positive). This might speed up the computation.
 func (p *Pigosat) NextMaxSatisfiableAssumptions() []Literal {
 	defer p.ready(false)()
 	if C.picosat_inconsistent(p.p) != 0 {

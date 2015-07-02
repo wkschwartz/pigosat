@@ -113,8 +113,8 @@ var formulaTests = []formulaTest{
 -1 2 0
 -1 -2 0
 `},
-	// For testing that empty clauses are skipped and 0s end clauses
-	3: {Formula{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
+	// For testing that 0s end clauses
+	3: {Formula{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {-3, -4, 0}},
 		5, 3, Satisfiable,
 		Solution{false, true, false, false, false, true}, false,
 		`p cnf 5 3
@@ -194,6 +194,14 @@ var formulaTests = []formulaTest{
 -1 4 0
 -1 -4 0
 `},
+	// For testing that empty clauses are *not* skipped and make the formula UNSAT
+	10: {Formula{{1, 2, 3}, {1, -2, -3}, {}},
+		3, 3, Unsatisfiable, nil, false,
+		`p cnf 3 3
+1 2 3 0
+1 -2 -3 0
+0
+`},
 }
 
 // Ensure our expected solutions are correct.
@@ -223,7 +231,7 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest,
 			p.AddedOriginalClauses())
 	}
 	if s := p.Seconds(); s <= 0 || s > time.Millisecond {
-		t.Errorf("Test %d: Test took a suspicious amount of time: %v", i, s)
+		t.Logf("Test %d: Test took a suspicious amount of time: %v", i, s)
 	}
 }
 

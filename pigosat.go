@@ -382,30 +382,26 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 	if err != nil {
 		return err
 	}
-	// Don't hide prior errors if the pipe closes without errors.
-	closeCloser := func (closer io.Closer) {
-			if e := closer.Close(); e != nil {
-				err = e
-			}
-		}
-	defer closeCloser(wp)
-	defer closeCloser(rp)
-
-	cfile, err := cfdopen(wp, "a")
-	if err != nil {
-		return err
-	}
+	// To avoid double closing wp, close it explicitly at each errror branch.
 	defer func () {
-			if _, e := C.fclose(cfile); e != nil {
+			if e := rp.Close(); e != nil { // Don't hide prior errors.
 				err = e
 			}
 		}()
 
-	err = writeFn(cfile)
+	cfile, err := cfdopen(wp, "a") // wp.Close() below closes cfile.
 	if err != nil {
+		wp.Close()
 		return err
 	}
-	closeCloser(wp)
+
+	if err = writeFn(cfile); err != nil {
+		wp.Close()
+		return err
+	}
+	if err = wp.Close(); err != nil {
+		return err
+	}
 	_, err = io.Copy(w, rp)
 	return err
 }

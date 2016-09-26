@@ -405,3 +405,19 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 	_, err = io.Copy(w, rp)
 	return err
 }
+
+// repeatWriteFn returns a writeFn for use with cFileWriterWrapper. The returned
+// writeFn writes the byte in content to the file `times` number of times.
+// This function is only for testing cFileWriterWrapper and is in this file only
+// because Cgo is not supported in test files. See TestCFileWriterWrapper
+// in pigosat_test.go.
+func repeatWriteFn (times int, content byte) (func(*C.FILE) error) {
+	return func (file *C.FILE) error {
+		for i := 0; i < times; i++ {
+			if _, e := C.fputc(C.int(content), file); e != nil {
+				return e
+			}
+		}
+		return nil
+	}
+}

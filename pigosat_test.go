@@ -432,6 +432,26 @@ func TestUninitializedOrDeleted(t *testing.T) {
 	}
 }
 
+func TestCFileWriterWrapper(t *testing.T) {
+	var buf bytes.Buffer
+	// Pick something bigger than pipe buffers usually get. See
+	//   1. http://unix.stackexchange.com/a/11954/17035
+	//   2. http://man7.org/linux/man-pages/man7/pipe.7.html
+	// On Mac OS and Linux, it seems pipes fill up at 65536 bytes.
+	const size int = 65536 + 1
+	const content byte = 'a'
+	err := cFileWriterWrapper(&buf, repeatWriteFn(size, content))
+	if err != nil {
+		t.Error(err)
+	}
+	if buf.Len() != size {
+		t.Errorf("Only %d of %d bytes written to buffer", buf.Len(), size)
+	}
+	if s := buf.String(); s[0] != content || s[len(s)-1] != content {
+		t.Errorf("Buffer does not contain the expected data")
+	}
+}
+
 func TestPrint(t *testing.T) {
 	var buf bytes.Buffer
 	for i, ft := range formulaTests {

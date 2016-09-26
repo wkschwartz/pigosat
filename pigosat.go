@@ -247,7 +247,7 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 	}
 }
 
-// Print appends the CNF in DIMACS format to the given file.
+// Print appends the formula in DIMACS format to the given io.Writer.
 func (p *Pigosat) Print(w io.Writer) error {
 	defer p.ready(true)()
 	return cFileWriterWrapper(w, func(cfile *C.FILE) error {
@@ -325,8 +325,8 @@ func (p *Pigosat) BlockSolution(solution Solution) error {
 	return nil
 }
 
-// Write the clauses that were used in deriving the empty clause to a file
-// in DIMACS format.
+// WriteClausalCore writes in DIMACS format the clauses that were used in
+// deriving the empty clause.
 //
 // Requires that Pigosat was created with EnableTrace == true.
 func (p *Pigosat) WriteClausalCore(f io.Writer) error {
@@ -342,7 +342,7 @@ func (p *Pigosat) WriteClausalCore(f io.Writer) error {
 	})
 }
 
-// Write a compact proof trace in TraceCheck format to a file.
+// WriteCompactTrace writes a compact proof trace in TraceCheck format.
 //
 // Requires that Pigosat was created with EnableTrace == true.
 func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
@@ -358,7 +358,7 @@ func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
 	})
 }
 
-// Write an extended proof trace in TraceCheck format to a file.
+// WriteExtendedTrace writes an extended proof trace in TraceCheck format.
 //
 // Requires that Pigosat was created with EnableTrace == true.
 func (p *Pigosat) WriteExtendedTrace(f io.Writer) error {

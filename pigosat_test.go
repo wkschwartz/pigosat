@@ -65,10 +65,8 @@ func evaluate(formula Formula, solution Solution) bool {
 }
 
 func equalDimacs(d1, d2 string) bool {
-	// We can't rely on the DIMAC output having clauses in a consistent order.
-	// Enabled TRACE when compiling picosat, for instance, results in a
-	// different clause order. Better to compare the output as a sorted list of
-	// lines.
+	// We can't rely on the DIMACS output having clauses in a consistent order,
+	// so we compare the output as a sorted list of lines.
 	actual := strings.Split(d1, "\n")
 	expected := strings.Split(d2, "\n")
 	sort.Strings(actual)
@@ -463,7 +461,7 @@ func TestWriteClausalCore(t *testing.T) {
 		buf.Reset()
 		err := p.WriteClausalCore(&buf)
 
-		// Only Unsatisfiable solutions should producee clausal cores
+		// Only Unsatisfiable solutions should produce clausal cores.
 		if err != nil {
 			if status == Unsatisfiable {
 				t.Errorf("Test %d: Error calling WriteClausalCore: %v", i, err)
@@ -471,11 +469,8 @@ func TestWriteClausalCore(t *testing.T) {
 			continue
 		}
 
-		// The variable decisions could be different on different calls, unless
-		// each test Formula uses a specific set of assumptions to force the
-		// results. For now, just make sure the lib writes out a valid dimac
-		// format, which is probably good enough. We are only testing the API
-		// call behavior and not the values.
+		// Just make sure we write out a valid DIMACS format since we are only
+		// testing the API here, not the solutions.
 		if !bytes.HasPrefix(buf.Bytes(), prefix) {
 			t.Errorf("Test %d: Expected Unsatisfiable clausal core to "+
 				"start with 'p cnf'; got %q", i, buf)

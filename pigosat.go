@@ -383,13 +383,13 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 		return err
 	}
 	// Don't hide prior errors if the pipe closes without errors.
-	close = func (closer io.Closer) {
+	closeCloser := func (closer io.Closer) {
 			if e := closer.Close(); e != nil {
 				err = e
 			}
 		}
-	defer close(wp)
-	defer close(rp)
+	defer closeCloser(wp)
+	defer closeCloser(rp)
 
 	cfile, err := cfdopen(wp, "a")
 	if err != nil {

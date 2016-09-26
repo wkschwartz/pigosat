@@ -14,7 +14,6 @@ package pigosat
 // #include "picosat.h" /* REMEMBER TO UPDATE PicosatVersion BELOW! */
 import "C"
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -332,7 +331,7 @@ func (p *Pigosat) BlockSolution(solution Solution) error {
 func (p *Pigosat) WriteClausalCore(f io.Writer) error {
 	defer p.ready(true)()
 	if Status(C.picosat_res(p.p)) != Unsatisfiable {
-		return errors.New("expected to be in Unsatisfiable state")
+		return fmt.Errorf("expected to be in Unsatisfiable state")
 	}
 
 	return cFileWriterWrapper(f, func(cfile *C.FILE) error {
@@ -348,7 +347,7 @@ func (p *Pigosat) WriteClausalCore(f io.Writer) error {
 func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
 	defer p.ready(true)()
 	if Status(C.picosat_res(p.p)) != Unsatisfiable {
-		return errors.New("expected to be in Unsatisfiable state")
+		return fmt.Errorf("expected to be in Unsatisfiable state")
 	}
 
 	return cFileWriterWrapper(f, func(cfile *C.FILE) error {
@@ -364,7 +363,7 @@ func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
 func (p *Pigosat) WriteExtendedTrace(f io.Writer) error {
 	defer p.ready(true)()
 	if Status(C.picosat_res(p.p)) != Unsatisfiable {
-		return errors.New("expected to be in Unsatisfiable state")
+		return fmt.Errorf("expected to be in Unsatisfiable state")
 	}
 
 	return cFileWriterWrapper(f, func(cfile *C.FILE) error {

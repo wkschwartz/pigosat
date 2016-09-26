@@ -497,7 +497,7 @@ func TestWriteTrace(t *testing.T) {
 			continue
 		}
 		if buf.Len() == 0 {
-			t.Errorf("Test %d: Expected Unsatisfiable formulat to produce a trace; got 0 bytes", i)
+			t.Errorf("Test %d: Unsatisfiable formula to produced no compact trace", i)
 		}
 
 		buf.Reset()
@@ -511,7 +511,7 @@ func TestWriteTrace(t *testing.T) {
 			continue
 		}
 		if buf.Len() == 0 {
-			t.Errorf("Test %d: Expected Unsatisfiable formulat to produce a trace; got 0 bytes", i)
+			t.Errorf("Test %d: Unsatisfiable formula to produced no extended trace", i)
 		}
 	}
 }

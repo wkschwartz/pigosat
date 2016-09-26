@@ -248,7 +248,6 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 }
 
 // Print appends the CNF in DIMACS format to the given file.
-// func (p *Pigosat) Print(file *os.File) error {
 func (p *Pigosat) Print(w io.Writer) error {
 	defer p.ready(true)()
 	return cFileWriterWrapper(w, func(cfile *C.FILE) error {

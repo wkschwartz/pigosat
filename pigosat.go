@@ -405,6 +405,7 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 	if err != nil {
 		return err
 	}
+	closeCloser(wp)
 	_, err = io.Copy(w, rp)
 	return err
 }

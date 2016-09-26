@@ -373,8 +373,10 @@ func (p *Pigosat) WriteExtendedTrace(f io.Writer) error {
 	})
 }
 
-// A wrapper to take an io.Writer interface and feed it the output from picosat
-// functions that specifically need a *C.FILE
+// cFileWriterWrapper copies writeFn's data into w. writeFn takes a *C.FILE, and
+// whatever writeFn writes to that *C.FILE, cFileWriterWrapper will then
+// copy to w. This wrapper allows the Go API to write to io.Writers anything
+// PicoSAT writes to a *C.FILE. writeFn need not close the *C.FILE.
 func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 	rp, wp, err := os.Pipe()
 	if err != nil {

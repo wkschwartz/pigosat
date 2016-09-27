@@ -386,11 +386,11 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 		return err
 	}
 	// To avoid double closing wp, close it explicitly at each errror branch.
-	defer func () {
-			if e := rp.Close(); e != nil { // Don't hide prior errors.
-				err = e
-			}
-		}()
+	defer func() {
+		if e := rp.Close(); e != nil { // Don't hide prior errors.
+			err = e
+		}
+	}()
 
 	cfile, err := cfdopen(wp, "a") // wp.Close() below closes cfile.
 	if err != nil {
@@ -428,8 +428,8 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 // This function is only for testing cFileWriterWrapper and is in this file only
 // because Cgo is not supported in test files. See TestCFileWriterWrapper
 // in pigosat_test.go.
-func repeatWriteFn (times int, content byte) (func(*C.FILE) error) {
-	return func (file *C.FILE) error {
+func repeatWriteFn(times int, content byte) func(*C.FILE) error {
+	return func(file *C.FILE) error {
 		for i := 0; i < times; i++ {
 			if _, e := C.fputc(C.int(content), file); e != nil {
 				return e

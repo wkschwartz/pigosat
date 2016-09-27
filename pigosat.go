@@ -400,7 +400,7 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 
 	// We have to read from the pipe in a separate goroutine because the write
 	// end of the pipe will block if the pipe gets full.
-	errChan := make(chan error)
+	errChan := make(chan error, 1)
 	go func() {
 		_, e := io.Copy(w, rp)
 		errChan <- e

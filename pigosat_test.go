@@ -437,8 +437,9 @@ func TestCFileWriterWrapper(t *testing.T) {
 	// Pick something bigger than pipe buffers usually get. See
 	//   1. http://unix.stackexchange.com/a/11954/17035
 	//   2. http://man7.org/linux/man-pages/man7/pipe.7.html
-	// On Mac OS and Linux, it seems pipes fill up at 65536 bytes.
-	const size int = 1<<16 + 1<<4
+	// On Mac OS and Linux, it seems pipes fill up at 65536 bytes. This is large
+	// enough to  elicit a deadlock in incorrect implementations.
+	const size int = 1<<16 + 1<<15
 	const content byte = 'a'
 	err := cFileWriterWrapper(&buf, repeatWriteFn(size, content))
 	if err != nil {

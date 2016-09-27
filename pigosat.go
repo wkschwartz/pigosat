@@ -398,11 +398,6 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 		return err
 	}
 
-	if err = writeFn(cfile); err != nil {
-		wp.Close()
-		return err
-	}
-
 	// We have to read from the pipe in a separate goroutine because the write
 	// end of the pipe will block if the pipe gets full.
 	errChan := make(chan error)
@@ -410,6 +405,11 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 		_, e := io.Copy(w, rp)
 		errChan <- e
 	}()
+
+	if err = writeFn(cfile); err != nil {
+		wp.Close()
+		return err
+	}
 
 	// We have to close wp or rp won't know it's hit the end of the data.
 	// Without flushing cfile, the data might get stuck in the C buffer.

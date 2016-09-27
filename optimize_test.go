@@ -104,7 +104,7 @@ func TestMinimize(t *testing.T) {
 				if opt <= hi && !feasible {
 					t.Errorf("%+v: Should have been feasible", m.params)
 				} else if opt > hi && feasible {
-					t.Error("%+v: Should not have been feasible", m.params)
+					t.Errorf("%+v: Should not have been feasible", m.params)
 				}
 			} // opt
 		} // lo

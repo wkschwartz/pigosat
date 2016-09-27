@@ -113,11 +113,14 @@ func cfdopen(file *os.File, mode string) (*C.FILE, error) {
 	defer C.free(unsafe.Pointer(cmode))
 	// FILE * fdopen(int fildes, const char *mode);
 	cfile, err := C.fdopen(C.int(file.Fd()), cmode)
-	if err != nil {
-		return nil, err
-	}
+	// Sometimes err != nil even after successful call because fdopen caught an
+	// error but didn't clear errno. See
+	// http://comp.unix.programmer.narkive.com/g4gxgYP4/fdopen-cause-illegal-seek
 	if cfile == nil {
-		return nil, syscall.EINVAL
+		if err == nil {
+			err = syscall.EINVAL
+		}
+		return nil, err
 	}
 	return cfile, nil
 }

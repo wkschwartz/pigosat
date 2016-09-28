@@ -328,9 +328,7 @@ func (p *Pigosat) BlockSolution(solution Solution) error {
 }
 
 // WriteClausalCore writes in DIMACS format the clauses that were used in
-// deriving the empty clause.
-//
-// Requires that Pigosat was created with EnableTrace == true.
+// deriving the empty clause. Requires that p was created with EnableTrace.
 func (p *Pigosat) WriteClausalCore(f io.Writer) error {
 	defer p.ready(true)()
 	if Status(C.picosat_res(p.p)) != Unsatisfiable {
@@ -344,9 +342,8 @@ func (p *Pigosat) WriteClausalCore(f io.Writer) error {
 	})
 }
 
-// WriteCompactTrace writes a compact proof trace in TraceCheck format.
-//
-// Requires that Pigosat was created with EnableTrace == true.
+// WriteCompactTrace writes a compact proof trace in TraceCheck format. Requires
+// that p was created with EnableTrace.
 func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
 	defer p.ready(true)()
 	if Status(C.picosat_res(p.p)) != Unsatisfiable {
@@ -361,8 +358,7 @@ func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
 }
 
 // WriteExtendedTrace writes an extended proof trace in TraceCheck format.
-//
-// Requires that Pigosat was created with EnableTrace == true.
+// Requires that p was created with EnableTrace.
 func (p *Pigosat) WriteExtendedTrace(f io.Writer) error {
 	defer p.ready(true)()
 	if Status(C.picosat_res(p.p)) != Unsatisfiable {

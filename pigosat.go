@@ -381,7 +381,7 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 	if err != nil {
 		return err
 	}
-	// To avoid double closing wp, close it explicitly at each errror branch.
+	// To avoid double closing wp, close it explicitly at each error branch.
 	defer func() {
 		if e := rp.Close(); e != nil { // Don't hide prior errors.
 			err = e

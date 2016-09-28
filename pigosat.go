@@ -382,6 +382,10 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 		return err
 	}
 	// To avoid double closing wp, close it explicitly at each error branch.
+	// Closing rp here is a data race with the io.Copy(w, rp) call in the
+	// goroutine below, but only if there is an error that causes the the outer
+	// function to return early. But then io.Copy will just return an error,
+	// which we (reasonably) ignore.
 	defer func() {
 		if e := rp.Close(); e != nil { // Don't hide prior errors.
 			err = e

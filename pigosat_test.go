@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -441,7 +442,7 @@ func TestCFileWriterWrapper(t *testing.T) {
 	// enough to  elicit a deadlock in incorrect implementations.
 	const size int = 1<<16 + 1<<15
 	const content byte = 'a'
-	err := cFileWriterWrapper(&buf, repeatWriteFn(size, content))
+	err := cFileWriterWrapper(&buf, repeatWriteFn(size, content, nil))
 	if err != nil {
 		t.Error(err)
 	}
@@ -450,6 +451,25 @@ func TestCFileWriterWrapper(t *testing.T) {
 	}
 	if s := buf.String(); s[0] != content || s[len(s)-1] != content {
 		t.Errorf("Buffer does not contain the expected data")
+	}
+
+	// Test that the goroutine the copies from the pipe to the io.Writer does
+	// not leak if cFileWriterWrapper exits early because of an error after
+	// the goroutine starts. We do this by injecting an error from the writeFn.
+	// Do not mark this test as being parallelizable (using t.Parallel())
+	// because it counts the number of goroutines.
+	fakeError := fmt.Errorf("fake error")
+	num_goroutines_before := runtime.NumGoroutine()
+	err = cFileWriterWrapper(&buf, repeatWriteFn(size, content, fakeError))
+	time.Sleep(100 * time.Microsecond) // Give goroutine enough time to finish
+	num_goroutines_after := runtime.NumGoroutine()
+	if err != fakeError {
+		t.Error(err)
+	}
+	if num_goroutines_after != num_goroutines_before {
+		t.Errorf("Possible goroutine leak. Before calling cFileWriterWrapper "+
+			"there were %d goroutines, and afterward there were %d.",
+			num_goroutines_before, num_goroutines_after)
 	}
 }
 

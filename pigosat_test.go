@@ -3,9 +3,14 @@
 package pigosat
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
+	"runtime"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 )
@@ -58,6 +63,16 @@ func evaluate(formula Formula, solution Solution) bool {
 		}
 	}
 	return true
+}
+
+func equalDimacs(d1, d2 string) bool {
+	// We can't rely on the DIMACS output having clauses in a consistent order,
+	// so we compare the output as a sorted list of lines.
+	actual := strings.Split(d1, "\n")
+	expected := strings.Split(d2, "\n")
+	sort.Strings(actual)
+	sort.Strings(expected)
+	return reflect.DeepEqual(actual, expected)
 }
 
 type formulaTest struct {
@@ -418,29 +433,126 @@ func TestUninitializedOrDeleted(t *testing.T) {
 	}
 }
 
+func TestCFileWriterWrapper(t *testing.T) {
+	var buf bytes.Buffer
+	// Pick something bigger than pipe buffers usually get. See
+	//   1. http://unix.stackexchange.com/a/11954/17035
+	//   2. http://man7.org/linux/man-pages/man7/pipe.7.html
+	// On Mac OS and Linux, it seems pipes fill up at 65536 bytes. This is large
+	// enough to  elicit a deadlock in incorrect implementations.
+	const size int = 1<<16 + 1<<15
+	const content byte = 'a'
+	err := cFileWriterWrapper(&buf, repeatWriteFn(size, content, nil))
+	if err != nil {
+		t.Error(err)
+	}
+	if buf.Len() != size {
+		t.Errorf("Only %d of %d bytes written to buffer", buf.Len(), size)
+	}
+	if s := buf.String(); s[0] != content || s[len(s)-1] != content {
+		t.Errorf("Buffer does not contain the expected data")
+	}
+
+	// Test that the goroutine the copies from the pipe to the io.Writer does
+	// not leak if cFileWriterWrapper exits early because of an error after
+	// the goroutine starts. We do this by injecting an error from the writeFn.
+	// Do not mark this test as being parallelizable (using t.Parallel())
+	// because it counts the number of goroutines.
+	fakeError := fmt.Errorf("fake error")
+	num_goroutines_before := runtime.NumGoroutine()
+	err = cFileWriterWrapper(&buf, repeatWriteFn(size, content, fakeError))
+	time.Sleep(100 * time.Microsecond) // Give goroutine enough time to finish
+	num_goroutines_after := runtime.NumGoroutine()
+	if err != fakeError {
+		t.Error(err)
+	}
+	if num_goroutines_after != num_goroutines_before {
+		t.Errorf("Possible goroutine leak. Before calling cFileWriterWrapper "+
+			"there were %d goroutines, and afterward there were %d.",
+			num_goroutines_before, num_goroutines_after)
+	}
+}
+
 func TestPrint(t *testing.T) {
+	var buf bytes.Buffer
 	for i, ft := range formulaTests {
-		tmp, err := ioutil.TempFile("", "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			tmp.Close()
-			if err := os.Remove(tmp.Name()); err != nil {
-				t.Error(err)
-			}
-		}()
-		p, err := New(nil)
+		buf.Reset()
+		p, _ := New(nil)
 		p.AddClauses(ft.formula)
-		p.Print(tmp)
-		// Now we make sure the file was written.
-		buf, err := ioutil.ReadFile(tmp.Name())
+		err := p.Print(&buf)
 		if err != nil {
 			t.Errorf("Test %d: Output file not written to: err=%v", i, err)
 		}
-		if s := string(buf); s != ft.dimacs {
+		if !equalDimacs(buf.String(), ft.dimacs) {
 			t.Errorf("Test %d: expected >>>\n%s<<< but got >>>\n%s<<<", i,
-				ft.dimacs, s)
+				ft.dimacs, buf.String())
+		}
+	}
+}
+
+func TestWriteClausalCore(t *testing.T) {
+	var buf bytes.Buffer
+	prefix := []byte(`p cnf`)
+
+	for i, ft := range formulaTests {
+		p, _ := New(&Options{EnableTrace: true})
+		p.AddClauses(ft.formula)
+		status, _ := p.Solve()
+
+		buf.Reset()
+		err := p.WriteClausalCore(&buf)
+
+		// Only Unsatisfiable solutions should produce clausal cores.
+		if err != nil {
+			if status == Unsatisfiable {
+				t.Errorf("Test %d: Error calling WriteClausalCore: %v", i, err)
+			}
+			continue
+		}
+
+		// Just make sure we write out a valid DIMACS format since we are only
+		// testing the API here, not the solutions.
+		if !bytes.HasPrefix(buf.Bytes(), prefix) {
+			t.Errorf("Test %d: Expected Unsatisfiable clausal core to "+
+				"start with 'p cnf'; got %q", i, buf)
+		}
+	}
+}
+
+func TestWriteTrace(t *testing.T) {
+	var buf bytes.Buffer
+
+	for i, ft := range formulaTests {
+		p, _ := New(&Options{EnableTrace: true})
+		p.AddClauses(ft.formula)
+		status, _ := p.Solve()
+
+		buf.Reset()
+		err := p.WriteCompactTrace(&buf)
+
+		// Only Unsatisfiable solutions should produce a trace
+		if err != nil {
+			if status == Unsatisfiable {
+				t.Errorf("Test %d: Error calling WriteCompactTrace: %v", i, err)
+			}
+			continue
+		}
+		if buf.Len() == 0 {
+			t.Errorf("Test %d: Unsatisfiable formula to produced no compact trace", i)
+		}
+
+		buf.Reset()
+		err = p.WriteExtendedTrace(&buf)
+
+		// Only Unsatisfiable solutions should produce a trace
+		if err != nil {
+			if status == Unsatisfiable {
+				t.Errorf("Test %d: Error calling WriteExtendedTrace: %v", i, err)
+			}
+			continue
+		}
+		if buf.Len() == 0 {
+			t.Errorf("Test %d: Unsatisfiable formula to produced no extended trace", i)
 		}
 	}
 }

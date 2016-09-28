@@ -283,6 +283,7 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 //   }
 func (p *Pigosat) Assume(lit Literal) {
 	defer p.ready(false)()
+	// void picosat_assume (PicoSAT *, int lit);
 	C.picosat_assume(p.p, C.int(lit))
 }
 
@@ -299,6 +300,7 @@ func (p *Pigosat) FailedAssumption(lit Literal) bool {
 	if p.Res() != Unsatisfiable || lit == 0 {
 		return false
 	}
+	// int picosat_failed_assumption (PicoSAT *, int lit);
 	return C.picosat_failed_assumption(p.p, C.int(lit)) != 0
 }
 
@@ -310,6 +312,7 @@ func (p *Pigosat) FailedAssumptions() []Literal {
 		return nil
 	}
 
+	// const int * picosat_failed_assumptions (PicoSAT *);
 	litPtr := C.picosat_failed_assumptions(p.p)
 	return p.litArrayToSlice(litPtr)
 }
@@ -357,6 +360,7 @@ func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
 	if C.picosat_inconsistent(p.p) != 0 {
 		return []Literal{}
 	}
+	//const int * picosat_maximal_satisfiable_subset_of_assumptions (PicoSAT *);
 	litPtr := C.picosat_maximal_satisfiable_subset_of_assumptions(p.p)
 	return p.litArrayToSlice(litPtr)
 }
@@ -396,6 +400,8 @@ func (p *Pigosat) NextMaxSatisfiableAssumptions() []Literal {
 	if C.picosat_inconsistent(p.p) != 0 {
 		return []Literal{}
 	}
+	// const int *
+	// picosat_next_maximal_satisfiable_subset_of_assumptions (PicoSAT *);
 	litPtr := C.picosat_next_maximal_satisfiable_subset_of_assumptions(p.p)
 	return p.litArrayToSlice(litPtr)
 }

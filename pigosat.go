@@ -242,7 +242,7 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 // More precisely, assumptions actually remain valid even after the next call to
 // Solve() returns. Valid means they remain 'assumed' until a call to
 // AddClauses(), Assume(), or another Solve(), following the first Solve().
-// They need to stay valid for FailedAssumptions() to return correct values.
+// They need to stay valid for FailedAssumptions(), etc., to work correctly.
 //
 // Example:
 //
@@ -287,13 +287,16 @@ func (p *Pigosat) Assume(lit Literal) {
 	C.picosat_assume(p.p, C.int(lit))
 }
 
-// Returns non zero if the literal is a failed assumption, which is defined as
-// an assumption used to derive unsatisfiability. This is as accurate as
-// generating core literals, but still of course is an overapproximation of the
-// set of assumptions really necessary. The technique does not need clausal core
-// generation nor tracing to be enabled and thus can be much more effective. The
-// function can only be called as long the current assumptions are valid. See
-// Assume() for more details.
+// FailedAssumption returns true if the literal is a failed assumption, meaning
+// the literal was added with Assume then used to derive unsatisfiability.
+// The return value is only meaningful as long the current assumptions are
+// valid. See Assume() for more details.
+//
+// From the Picosat documentation:
+//   This is as accurate as generating core literals, but still of course is an
+//   overapproximation of the set of assumptions really necessary. The technique
+//   does not need clausal core generation nor tracing to be enabled and thus
+//   can be much more effective.
 func (p *Pigosat) FailedAssumption(lit Literal) bool {
 	defer p.ready(true)()
 	// picoast_failed_assumption SIGABRTs if the following conditional is true
@@ -304,8 +307,9 @@ func (p *Pigosat) FailedAssumption(lit Literal) bool {
 	return C.picosat_failed_assumption(p.p, C.int(lit)) != 0
 }
 
-// Returns a list of failed assumption in the last call to Solve(). It only
-// makes sense if the last call to Solve() returned Unsatisfiable.
+// FailedAssumptions returns a list of failed assumptions in the last call to
+// Solve() or nil if the last call to Solve() did not return Unsatisfiable.
+// See Assume() and FailedAssumption() for more details.
 func (p *Pigosat) FailedAssumptions() []Literal {
 	defer p.ready(true)()
 	if p.Res() != Unsatisfiable {
@@ -317,8 +321,9 @@ func (p *Pigosat) FailedAssumptions() []Literal {
 	return p.litArrayToSlice(litPtr)
 }
 
-// Converts a 0-terminated array of literal results to a slice.
-// Does not acquire internal locks.
+// litArrayToSlice converts a 0-terminated C array of ints (of length at most
+// the number of variables) to a Go slice of Literals. It does not acquire
+// locks, so only call it from a method that does.
 func (p *Pigosat) litArrayToSlice(litPtr *C.int) []Literal {
 	if litPtr == nil || *litPtr == 0 {
 		return []Literal{}
@@ -348,13 +353,13 @@ func (p *Pigosat) litArrayToSlice(litPtr *C.int) []Literal {
 	return ints
 }
 
-// Compute one maximal subset of satisfiable assumptions. You need to set
-// the assumptions, call 'Solve()' before calling this function.
-// The result is a list of assumptions that consistently can be asserted
-// at the same time.  Before returing the library 'reassumes' all assumptions.
+// MaxSatisfiableAssumptions computes a maximal subset of satisfiable
+// assumptions. See Assume() for more details. You need to set the assumptions
+// and call Solve() before calling this function. The result is a list of
+// assumptions that consistently can be asserted at the same time.
 //
 // It could be beneficial to set the default phase of assumptions
-// to true (positive).  This can speed up the computation.
+// to true (positive). This can speed up the computation.
 func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
 	defer p.ready(false)()
 	if C.picosat_inconsistent(p.p) != 0 {

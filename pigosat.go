@@ -300,7 +300,7 @@ func (p *Pigosat) Assume(lit Literal) {
 func (p *Pigosat) FailedAssumption(lit Literal) bool {
 	defer p.ready(true)()
 	// picoast_failed_assumption SIGABRTs if the following conditional is true
-	if p.Res() != Unsatisfiable || lit == 0 {
+	if p.res() != Unsatisfiable || lit == 0 {
 		return false
 	}
 	// int picosat_failed_assumption (PicoSAT *, int lit);
@@ -312,7 +312,7 @@ func (p *Pigosat) FailedAssumption(lit Literal) bool {
 // See Assume() and FailedAssumption() for more details.
 func (p *Pigosat) FailedAssumptions() []Literal {
 	defer p.ready(true)()
-	if p.Res() != Unsatisfiable {
+	if p.res() != Unsatisfiable {
 		return nil
 	}
 
@@ -473,6 +473,12 @@ func (p *Pigosat) Solve() (status Status, solution Solution) {
 // Res returns Solve's last status, or Unknown if Solve hasn't yet been called.
 func (p *Pigosat) Res() (status Status) {
 	defer p.ready(true)()
+	return p.res()
+}
+
+// res returns Solve's last status, or Unknown if Solve hasn't yet been called.
+// res does not lock, whereas Res locks.
+func (p *Pigosat) res() (status Status) {
 	// int picosat_res (PicoSAT *);
 	return Status(C.picosat_res(p.p))
 }

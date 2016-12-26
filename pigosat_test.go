@@ -535,6 +535,43 @@ func TestPrint(t *testing.T) {
 	}
 }
 
+func TestlitArrayToSlice(t *testing.T) {
+	// null pointers
+	assertPanics(t, "null pointer", "litArrayToSlice",
+		func() { litArrayToSlice(nil, 0) })
+	assertPanics(t, "null pointer", "litArrayToSlice",
+		func() { litArrayToSlice(nil, 1) })
+	// not zero terminated
+	badPtr := &cArray123[0]
+	assertPanics(t, "not zero terminated - unpadded", "litArrayToSlice",
+		func() { litArrayToSlice(badPtr, 3) })
+	assertPanics(t, "not zero terminated - padded", "litArrayToSlice",
+		func() { litArrayToSlice(badPtr, 2) })
+	// zero length
+	if ls := litArrayToSlice(&cZero, 0); len(ls) != 0 {
+		t.Errorf("Test 0-length litArrayToSlice, maxLen==0: return value has length %d",
+			len(ls))
+	}
+	if ls := litArrayToSlice(&cZero, 1); len(ls) != 0 {
+		t.Errorf(
+			"Test 0-length litArrayToSlice, maxLen>0: return value has length %d",
+			len(ls))
+	}
+	// works correctly
+	ptr := &cArray1230[0]
+	expected := []Literal{1, 2, 3}
+	if ls := litArrayToSlice(ptr, 3); len(ls) != 3 || !reflect.DeepEqual(ls, expected) {
+		t.Errorf(
+			"Test litArrayToSlice correct, maxLen==3: expected %v but got %v",
+			expected, ls)
+	}
+	if ls := litArrayToSlice(ptr, 4); len(ls) != 3 || !reflect.DeepEqual(ls, expected) {
+		t.Errorf(
+			"Test litArrayToSlice correct, maxLen==4: expected %v but got %v",
+			expected, ls)
+	}
+}
+
 // This is the example from the README.
 func Example_readme() {
 	p, _ := New(nil)

@@ -16,7 +16,6 @@ import "C"
 import (
 	"fmt"
 	"os"
-	"reflect"
 	"runtime"
 	"sync"
 	"syscall"
@@ -28,6 +27,12 @@ var Version = SemanticVersion{0, 4, 0, "", 0}
 
 // PicosatVersion is the version string from the underlying Picosat library.
 const PicosatVersion = "960"
+
+// For testing litArrayToSlice in TestlitArrayToSlice since you can't import CGo
+// into test files.
+var cArray123 = [3]C.int{1, 2, 3}
+var cArray1230 = [4]C.int{1, 2, 3, 0}
+var cZero C.int = 0
 
 // Argument/result types for Pigosat methods.
 
@@ -318,39 +323,25 @@ func (p *Pigosat) FailedAssumptions() []Literal {
 
 	// const int * picosat_failed_assumptions (PicoSAT *);
 	litPtr := C.picosat_failed_assumptions(p.p)
-	return p.litArrayToSlice(litPtr)
+	return litArrayToSlice(litPtr, int(C.picosat_variables(p.p)))
 }
 
 // litArrayToSlice converts a 0-terminated C array of ints (of length at most
-// the number of variables) to a Go slice of Literals. It does not acquire
-// locks, so only call it from a method that does.
-func (p *Pigosat) litArrayToSlice(litPtr *C.int) []Literal {
-	if litPtr == nil || *litPtr == 0 {
-		return []Literal{}
+// maxLen) to a Go slice of Literals.
+func litArrayToSlice(litPtr *C.int, maxLen int) []Literal {
+	if litPtr == nil {
+		panic("NULL pointer")
 	}
-	// It should be reasonable to use the number of vars in
-	// the solver as the max array size, since we aren't tracking
-	// the active number of assumptions.
-	size := int(C.picosat_variables(p.p))
-
-	var cints []C.int
-	header := (*reflect.SliceHeader)(unsafe.Pointer(&cints))
-	header.Cap = size
-	header.Len = size
-	header.Data = uintptr(unsafe.Pointer(litPtr))
-
-	// The returned int pointer is both temporary, and larger than
-	// needed, so we need to copy the real values into a new slice,
-	// up until the terminator.
-	ints := []Literal{}
-	for _, cint := range cints {
-		// break at the first sign of the 0 terminator.
-		if cint == 0 {
-			break
+	lits := []Literal{}
+	for *litPtr != 0 {
+		if len(lits) > maxLen {
+			panic("Array not zero-terminated")
 		}
-		ints = append(ints, Literal(cint))
+		lits = append(lits, Literal(*litPtr))
+		litPtr = (*C.int)(unsafe.Pointer(
+			uintptr(unsafe.Pointer(litPtr)) + uintptr(C.sizeof_int)))
 	}
-	return ints
+	return lits
 }
 
 // MaxSatisfiableAssumptions computes a maximal subset of satisfiable
@@ -367,7 +358,7 @@ func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
 	}
 	//const int * picosat_maximal_satisfiable_subset_of_assumptions (PicoSAT *);
 	litPtr := C.picosat_maximal_satisfiable_subset_of_assumptions(p.p)
-	return p.litArrayToSlice(litPtr)
+	return litArrayToSlice(litPtr, int(C.picosat_variables(p.p)))
 }
 
 // This function assumes that you have set up all assumptions with
@@ -408,7 +399,7 @@ func (p *Pigosat) NextMaxSatisfiableAssumptions() []Literal {
 	// const int *
 	// picosat_next_maximal_satisfiable_subset_of_assumptions (PicoSAT *);
 	litPtr := C.picosat_next_maximal_satisfiable_subset_of_assumptions(p.p)
-	return p.litArrayToSlice(litPtr)
+	return litArrayToSlice(litPtr, int(C.picosat_variables(p.p)))
 }
 
 // Print appends the CNF in DIMACS format to the given file.

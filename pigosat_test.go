@@ -385,8 +385,8 @@ func TestMeasureAllCalls(t *testing.T) {
 	}
 }
 
-func TestAssume(t *testing.T) {
-	formula := Formula{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}}
+func TestAssumptionsSucceeding(t *testing.T) {
+	formula := formulaTests[0].formula
 
 	successTests := []struct {
 		// The literals which should be assumed true/false
@@ -426,8 +426,8 @@ func TestAssume(t *testing.T) {
 	}
 }
 
-func TestFailedAssumptions(t *testing.T) {
-	formula := Formula{{1, -5, 4}, {-1, 5, 3, 4}, {-3, -4}}
+func TestAssumptionsFailing(t *testing.T) {
+	formula := formulaTests[0].formula
 	assumpts := []Literal{3, 4, 5}
 	failed := []Literal{3, 4}
 

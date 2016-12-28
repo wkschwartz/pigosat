@@ -424,20 +424,13 @@ func TestAssumptionsSucceeding(t *testing.T) {
 }
 
 func TestAssumptionsFailing(t *testing.T) {
-	formula := formulaTests[0].formula
-	assumpts := []Literal{3, 4, 5}
-	failed := []Literal{3, 4}
-
 	p, _ := New(nil)
-	p.AddClauses(formula)
-
-	for _, lit := range assumpts {
-		p.Assume(lit)
-	}
-
-	if status, _ := p.Solve(); status != Unsatisfiable {
-		t.Fatalf("Expected Solve to fail: %v (w/ assumptions %v)", formula, assumpts)
-	}
+	p.AddClauses(formulaTests[0].formula)
+	p.Assume(3)
+	p.Assume(4)
+	p.Assume(5)
+	p.Solve()
+	failed := []Literal{3, 4}
 
 	if actual := p.FailedAssumptions(); !reflect.DeepEqual(failed, actual) {
 		t.Errorf("Expected failed assumptions did not match; %v != %v", failed, actual)

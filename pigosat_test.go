@@ -450,19 +450,18 @@ func TestAssumptionsFailing(t *testing.T) {
 		}
 	}
 
-	expected1 := []Literal{3, 5}
-	expected2 := []Literal{5, 4}
-	if a := p.MaxSatisfiableAssumptions(); !reflect.DeepEqual(a, expected1) {
-		t.Errorf("MaxSatisfiableAssumptions: Got %v expected %v", a, expected1)
+	wanted1, wanted2 := []Literal{3, 5}, []Literal{5, 4}
+	if a := p.MaxSatisfiableAssumptions(); !reflect.DeepEqual(a, wanted1) {
+		t.Errorf("MaxSatisfiableAssumptions: Got %v wanted %v", a, wanted1)
 	}
-	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, expected1) {
-		t.Errorf("NextMaxSatisfiableAssumptions: Got %v expected %v", a, expected1)
+	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, wanted1) {
+		t.Errorf("NextMaxSatisfiableAssumptions: Got %v wanted %v", a, wanted1)
 		}
-	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, expected2) {
-		t.Errorf("NextMaxSatisfiableAssumptions: Got %v expected %v", a, expected2)
+	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, wanted2) {
+		t.Errorf("NextMaxSatisfiableAssumptions: Got %v wanted %v", a, wanted2)
 	}
 	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, []Literal{}) {
-		t.Errorf("NextMaxSatisfiableAssumptions: Got %v expected %v", a, []Literal{})
+		t.Errorf("NextMaxSatisfiableAssumptions: Got %v wanted %v", a, []Literal{})
 	}
 }
 

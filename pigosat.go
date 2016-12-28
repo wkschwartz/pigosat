@@ -382,7 +382,7 @@ func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
 // p.Assume(a2)
 // p.Assume(a3)
 // p.Assume(a4)
-// for mss := p.NextMaxSatisfiableAssumptions; len(mss) > 0; mss = p.NextMaxSatisfiableAssumptions() {
+// for mss := p.NextMaxSatisfiableAssumptions(); len(mss) > 0; mss = p.NextMaxSatisfiableAssumptions() {
 //     ProcessResults(mss)
 // }
 //

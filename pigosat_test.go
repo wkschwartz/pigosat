@@ -395,7 +395,6 @@ func TestAssumptionsSucceeding(t *testing.T) {
 		{[]Literal{3}, 6},
 		{[]Literal{4, 5}, 4},
 	}
-
 	var status Status
 	var sol Solution
 
@@ -411,7 +410,6 @@ func TestAssumptionsSucceeding(t *testing.T) {
 			status, sol = p.Solve()
 			p.BlockSolution(sol)
 		}
-
 		if count != at.solutions {
 			t.Errorf("Expected %d solution(s) for assumptions %v; got %d",
 				at.solutions, at.assumpts, count)
@@ -426,12 +424,11 @@ func TestAssumptionsFailing(t *testing.T) {
 	p.Assume(4)
 	p.Assume(5)
 	p.Solve()
-	failed := []Literal{3, 4}
 
+	failed := []Literal{3, 4}
 	if actual := p.FailedAssumptions(); !reflect.DeepEqual(failed, actual) {
 		t.Errorf("Expected failed assumptions %v != %v actual", failed, actual)
 	}
-
 	for _, f := range failed {
 		if !p.FailedAssumption(f) {
 			t.Errorf("Expected literal %v to be a failed assumption", f)

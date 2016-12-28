@@ -407,16 +407,13 @@ func TestAssumptionsSucceeding(t *testing.T) {
 		p, _ := New(nil)
 		p.AddClauses(formula)
 
-		count := 0
-		for {
+		count := -1
+		for status = Satisfiable; status == Satisfiable; count++ {
 			for _, lit := range at.assumpts {
 				p.Assume(lit)
 			}
-			if status, sol = p.Solve(); status != Satisfiable {
-				break
-			}
+			status, sol = p.Solve()
 			p.BlockSolution(sol)
-			count++
 		}
 
 		if count != at.solutions {
@@ -453,24 +450,19 @@ func TestAssumptionsFailing(t *testing.T) {
 		}
 	}
 
-	assumpts = p.MaxSatisfiableAssumptions()
-	if len(assumpts) < 2 {
-		t.Fatalf("Expected to find max satisfiable assumptions >= 2; got %d", len(assumpts))
+	expected1 := []Literal{3, 5}
+	expected2 := []Literal{5, 4}
+	if a := p.MaxSatisfiableAssumptions(); !reflect.DeepEqual(a, expected1) {
+		t.Errorf("MaxSatisfiableAssumptions: Got %v expected %v", a, expected1)
 	}
-
-	count := 0
-	for {
-		assumpts = p.NextMaxSatisfiableAssumptions()
-		if len(assumpts) == 0 {
-			break
+	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, expected1) {
+		t.Errorf("NextMaxSatisfiableAssumptions: Got %v expected %v", a, expected1)
 		}
-		if reflect.DeepEqual(assumpts, failed) {
-			t.Fatalf("Should not be a failed assumption: %v", assumpts)
-		}
-		count++
+	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, expected2) {
+		t.Errorf("NextMaxSatisfiableAssumptions: Got %v expected %v", a, expected2)
 	}
-	if count != 2 {
-		t.Fatalf("Expected to find 2 max satisfiable assumptions; got %d", count)
+	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, []Literal{}) {
+		t.Errorf("NextMaxSatisfiableAssumptions: Got %v expected %v", a, []Literal{})
 	}
 }
 

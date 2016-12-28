@@ -429,7 +429,7 @@ func TestAssumptionsFailing(t *testing.T) {
 	failed := []Literal{3, 4}
 
 	if actual := p.FailedAssumptions(); !reflect.DeepEqual(failed, actual) {
-		t.Errorf("Expected failed assumptions did not match; %v != %v", failed, actual)
+		t.Errorf("Expected failed assumptions %v != %v actual", failed, actual)
 	}
 
 	for _, f := range failed {
@@ -441,7 +441,7 @@ func TestAssumptionsFailing(t *testing.T) {
 	i, wanted := 0, [][]Literal{{3, 5}, {3, 5}, {5, 4}, {}}
 	for a := p.MaxSatisfiableAssumptions(); len(a) > 0; i++ {
 		if !reflect.DeepEqual(a, wanted[i]) {
-			t.Errorf("(Next)MaxSatisfiableAssumptions: Got %v wanted %v", a, wanted[i])
+			t.Errorf("(Next)MaxSat'Assumpt's: Got %v wanted %v", a, wanted[i])
 		}
 		a = p.NextMaxSatisfiableAssumptions()
 	}

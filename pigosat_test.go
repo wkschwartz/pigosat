@@ -439,8 +439,7 @@ func TestAssumptionsFailing(t *testing.T) {
 		t.Fatalf("Expected Solve to fail: %v (w/ assumptions %v)", formula, assumpts)
 	}
 
-	actual := p.FailedAssumptions()
-	if !reflect.DeepEqual(failed, actual) {
+	if actual := p.FailedAssumptions(); !reflect.DeepEqual(failed, actual) {
 		t.Errorf("Expected failed assumptions did not match; %v != %v", failed, actual)
 	}
 

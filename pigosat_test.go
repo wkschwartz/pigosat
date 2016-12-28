@@ -389,10 +389,8 @@ func TestAssumptionsSucceeding(t *testing.T) {
 	formula := formulaTests[0].formula
 
 	successTests := []struct {
-		// The literals which should be assumed true/false
-		assumpts []Literal
-		// The number of solutions that we expect to produce
-		solutions int
+		assumpts  []Literal // The literals which should be assumed true/false
+		solutions int       // The number of solutions that we expect to produce
 	}{
 		{[]Literal{1}, 10},
 		{[]Literal{2}, 9},
@@ -448,7 +446,7 @@ func TestAssumptionsFailing(t *testing.T) {
 	}
 	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, wanted1) {
 		t.Errorf("NextMaxSatisfiableAssumptions: Got %v wanted %v", a, wanted1)
-		}
+	}
 	if a := p.NextMaxSatisfiableAssumptions(); !reflect.DeepEqual(a, wanted2) {
 		t.Errorf("NextMaxSatisfiableAssumptions: Got %v wanted %v", a, wanted2)
 	}

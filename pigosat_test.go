@@ -386,13 +386,11 @@ func TestMeasureAllCalls(t *testing.T) {
 }
 
 func TestAssumptionsSucceeding(t *testing.T) {
-	formula := formulaTests[0].formula
-
 	successTests := []struct {
 		assumpts  []Literal // The literals which should be assumed true/false
 		solutions int       // The number of solutions that we expect to produce
 	}{
-		{[]Literal{1}, 10},
+		{[]Literal{1}, 10}, // We use formulaTests[0].formula below
 		{[]Literal{2}, 9},
 		{[]Literal{3}, 6},
 		{[]Literal{4, 5}, 4},
@@ -403,7 +401,7 @@ func TestAssumptionsSucceeding(t *testing.T) {
 
 	for _, at := range successTests {
 		p, _ := New(nil)
-		p.AddClauses(formula)
+		p.AddClauses(formulaTests[0].formula)
 
 		count := -1
 		for status = Satisfiable; status == Satisfiable; count++ {

@@ -14,6 +14,7 @@ package pigosat
 // #include "picosat.h" /* REMEMBER TO UPDATE PicosatVersion BELOW! */
 import "C"
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"runtime"
@@ -47,6 +48,22 @@ type Formula []Clause
 // variable. The zeroth element has no meaning and is always false.
 type Solution []bool
 
+// String returns a readable string like "{1:true, 2:false, ...}" for Solution
+// s.
+func (s Solution) String() string {
+	var buffer bytes.Buffer
+	buffer.WriteString("{")
+	if len(s) <= 1 {
+		buffer.WriteString("}")
+	} else {
+		for variable, value := range s[1 : len(s)-1] {
+			buffer.WriteString(fmt.Sprintf("%d:%-5v, ", variable+1, value))
+		}
+		buffer.WriteString(fmt.Sprintf("%d:%v}", len(s)-1, s[len(s)-1]))
+	}
+	return buffer.String()
+}
+
 // Statuses are returned by Pigosat.Solve to indicate success or failure.
 type Status int
 
@@ -59,6 +76,18 @@ const (
 	// The formula cannot be satisfied.
 	Unsatisfiable Status = C.PICOSAT_UNSATISFIABLE
 )
+
+// For use in Status.String.
+var statusNames = map[Status]string{Unknown: "Unknown",
+	Satisfiable: "Satisfiable", Unsatisfiable: "Unsatisfiable"}
+
+// String returns a readable string such as "Satisfiable" from Status s.
+func (s Status) String() string {
+	if name, ok := statusNames[s]; ok {
+		return name
+	}
+	return fmt.Sprintf("Status(%d)", s)
+}
 
 // Struct Pigosat must be created with New and stores the state of the
 // solver. It is safe for concurrent use.

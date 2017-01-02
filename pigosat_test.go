@@ -445,6 +445,40 @@ func TestPrint(t *testing.T) {
 	}
 }
 
+func TestSolutionString(t *testing.T) {
+	const expectedString = "{1:true , 2:false, 3:false, 4:false, 5:true}"
+	if s := formulaTests[0].expected.String(); s != expectedString {
+		t.Errorf("Expected %v. Got %v.", expectedString, s)
+	}
+	if s := (Solution{}).String(); s != "{}" {
+		t.Errorf("Expected {}. Got %v", s)
+	}
+	if s := (Solution{false}).String(); s != "{}" {
+		t.Errorf("Expected {}. Got %v", s)
+	}
+	if s := (Solution{false, true}).String(); s != "{1:true}" {
+		t.Errorf("Expected {1:true}. Got %v", s)
+	}
+	if s := (Solution{false, true, true}).String(); s != "{1:true , 2:true}" {
+		t.Errorf("Expected {1:true, 2:true}. Got %v", s)
+	}
+}
+
+func TestStatusString(t *testing.T) {
+	if s := Unknown.String(); s != "Unknown" {
+		t.Errorf(`Expected "Unknown". Got %v`, s)
+	}
+	if s := Satisfiable.String(); s != "Satisfiable" {
+		t.Errorf(`Expected "Satisfiable". Got %v`, s)
+	}
+	if s := Unsatisfiable.String(); s != "Unsatisfiable" {
+		t.Errorf(`Expected "Unsatisfiable". Got %v`, s)
+	}
+	if s := Status(17).String(); s != "Status(17)" {
+		t.Errorf(`Expected "Status(17)". Got %v`, s)
+	}
+}
+
 // This is the example from the README.
 func Example_readme() {
 	p, _ := New(nil)

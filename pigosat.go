@@ -300,8 +300,13 @@ func (p *Pigosat) blocksol(sol Solution) {
 // Solve the formula and return the status of the solution: one of the constants
 // Unsatisfiable, Satisfiable, or Unknown. If satisfiable, return a slice
 // indexed by the variables in the formula (so the first element is always
-// false). Solve can be used like an iterator, yielding a new solution until
-// there are no more feasible solutions:
+// false). Assigning these boolen values to the variables will satisfy the
+// formula and assumptions that p.AddClauses and p.Assume have added to the
+// Pigosat object. See the documentation for Assume regarding when assumptions
+// are valid.
+//
+// Solve can be used like an iterator, yielding a new solution until there are
+// no more feasible solutions:
 //    for status, solution := p.Solve(); status == Satisfiable; status, solution = p.Solve() {
 //        // Do stuff with status, solution
 //    }

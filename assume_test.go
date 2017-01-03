@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestlitArrayToSlice(t *testing.T) {
+func TestLitArrayToSlice(t *testing.T) {
 	// null pointers
 	assertPanics(t, "null pointer", "litArrayToSlice",
 		func() { litArrayToSlice(nil, 0) })
@@ -16,32 +16,25 @@ func TestlitArrayToSlice(t *testing.T) {
 		func() { litArrayToSlice(nil, 1) })
 	// not zero terminated
 	badPtr := &cArray123[0]
-	assertPanics(t, "not zero terminated - unpadded", "litArrayToSlice",
-		func() { litArrayToSlice(badPtr, 3) })
-	assertPanics(t, "not zero terminated - padded", "litArrayToSlice",
+	assertPanics(t, "not zero terminated - 1", "litArrayToSlice",
+		func() { litArrayToSlice(badPtr, 1) })
+	assertPanics(t, "not zero terminated - 2", "litArrayToSlice",
 		func() { litArrayToSlice(badPtr, 2) })
 	// zero length
-	if ls := litArrayToSlice(&cZero, 0); len(ls) != 0 {
-		t.Errorf("Test 0-length litArrayToSlice, maxLen==0: return value has length %d",
-			len(ls))
-	}
-	if ls := litArrayToSlice(&cZero, 1); len(ls) != 0 {
-		t.Errorf(
-			"Test 0-length litArrayToSlice, maxLen>0: return value has length %d",
-			len(ls))
+	for maxLen := 0; maxLen <= 2; maxLen++ {
+		if ls := litArrayToSlice(&cZero, 0); len(ls) != 0 {
+			t.Errorf("Test 0-length litArrayToSlice, maxLen==%d: return value has length %d",
+				maxLen, len(ls))
+		}
 	}
 	// works correctly
 	ptr := &cArray1230[0]
 	expected := []Literal{1, 2, 3}
-	if ls := litArrayToSlice(ptr, 3); len(ls) != 3 || !reflect.DeepEqual(ls, expected) {
-		t.Errorf(
-			"Test litArrayToSlice correct, maxLen==3: expected %v but got %v",
-			expected, ls)
-	}
-	if ls := litArrayToSlice(ptr, 4); len(ls) != 3 || !reflect.DeepEqual(ls, expected) {
-		t.Errorf(
-			"Test litArrayToSlice correct, maxLen==4: expected %v but got %v",
-			expected, ls)
+	for maxLen := 3; maxLen <= 10; maxLen++ {
+		if ls := litArrayToSlice(ptr, maxLen); !reflect.DeepEqual(ls, expected) {
+			t.Errorf("Test litArrayToSlice correct, maxLen==%d: expected %v but got %v",
+				maxLen, expected, ls)
+		}
 	}
 }
 

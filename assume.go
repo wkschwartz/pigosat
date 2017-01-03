@@ -49,7 +49,7 @@ func litArrayToSlice(litPtr *C.int, maxLen int) []Literal {
 	}
 	lits := []Literal{}
 	for *litPtr != 0 {
-		if len(lits) > maxLen {
+		if len(lits) >= maxLen {
 			panic("Array not zero-terminated")
 		}
 		lits = append(lits, Literal(*litPtr))

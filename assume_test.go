@@ -54,24 +54,34 @@ func TestAssumptionsSucceeding(t *testing.T) {
 		{[]Literal{3}, 6},
 		{[]Literal{4, 5}, 4},
 	}
-	var status Status
-	var sol Solution
 
-	for _, at := range successTests {
+	for i, at := range successTests {
 		p, _ := New(nil)
 		p.AddClauses(formulaTests[0].formula)
 
-		count := -1
-		for status = Satisfiable; status == Satisfiable; count++ {
+		count := 0
+		for ; ; count++ {
 			for _, lit := range at.assumpts {
 				p.Assume(lit)
 			}
-			status, sol = p.Solve()
+			status, sol := p.Solve()
+			if status != Satisfiable {
+				break
+			}
+
+			// All the UNSAT methods should give zero answers.
+			if p.FailedAssumption(at.assumpts[0]) {
+				t.Errorf("Test %d: FailedAssumption: expected %v not to be failed", i, at.assumpts[0])
+			}
+			if r := p.FailedAssumptions(); len(r) != 0 {
+				t.Errorf("Test %d: FailedAssumptions: expected [], got %v", i, r)
+			}
+
 			p.BlockSolution(sol)
 		}
 		if count != at.solutions {
-			t.Errorf("Expected %d solution(s) for assumptions %v; got %d",
-				at.solutions, at.assumpts, count)
+			t.Errorf("Test %d: Expected %d solution(s) for assumptions %v; got %d",
+				i, at.solutions, at.assumpts, count)
 		}
 	}
 }
@@ -100,5 +110,8 @@ func TestAssumptionsFailing(t *testing.T) {
 			t.Errorf("(Next)MaxSat'Assumpt's: Got %v wanted %v", a, wanted[i])
 		}
 		a = p.NextMaxSatisfiableAssumptions()
+	}
+	if a := p.MaxSatisfiableAssumptions(); !reflect.DeepEqual(a, []Literal{}) {
+		t.Errorf("MaxSatisfiableAssumptions: CNF inconsistent, so wanted []Literal{}, but got %v", a)
 	}
 }

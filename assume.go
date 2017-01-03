@@ -104,12 +104,12 @@ func litArrayToSlice(litPtr *C.int, maxLen int) []Literal {
 }
 
 // FailedAssumptions returns a list of failed assumptions in the last call to
-// Solve() or nil if the last call to Solve() did not return Unsatisfiable.
-// See Assume() and FailedAssumption() for more details.
+// Solve() or an empty list if the last call to Solve() did not return
+// Unsatisfiable. See Assume() and FailedAssumption() for more details.
 func (p *Pigosat) FailedAssumptions() []Literal {
 	defer p.ready(true)()
 	if p.res() != Unsatisfiable {
-		return nil
+		return []Literal{}
 	}
 
 	// const int * picosat_failed_assumptions (PicoSAT *);

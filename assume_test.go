@@ -73,7 +73,7 @@ func TestAssumptionsSucceeding(t *testing.T) {
 			if p.FailedAssumption(at.assumpts[0]) {
 				t.Errorf("Test %d: FailedAssumption: expected %v not to be failed", i, at.assumpts[0])
 			}
-			if r := p.FailedAssumptions(); len(r) != 0 {
+			if r := p.FailedAssumptions(); !reflect.DeepEqual(r, []Literal{}) {
 				t.Errorf("Test %d: FailedAssumptions: expected [], got %v", i, r)
 			}
 

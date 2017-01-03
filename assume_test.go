@@ -117,6 +117,40 @@ func TestAssumptionsFailing(t *testing.T) {
 	}
 }
 
+// TestAssumptionsNoCrash tests that where Picosat crashes when using the
+// *assumption* methods when the solver's state is not UNSAT, Pigosat should
+// just give a simple zero answer.
+func TestAssumptionsNoCrash(t *testing.T) {
+	p, _ := New(nil)
+	p.AddClauses(formulaTests[0].formula)
+	p.Assume(3)
+	p.Assume(4)
+	p.Assume(5)
+	p.Solve()
+
+	if r := p.Res(); r != Unsatisfiable {
+		t.Fatalf("Expected %v, got %v", Unsatisfiable, r)
+	}
+	if !p.FailedAssumption(3) {
+		t.Fatalf("Expected literal 3 to be a failed assumption")
+	}
+	if r := p.Res(); r != Unsatisfiable {
+		t.Fatalf("Expected %v, got %v", Unsatisfiable, r)
+	}
+
+	p.Assume(3)
+	if r := p.Res(); r != Unsatisfiable {
+		t.Fatalf("Expected %v, got %v", Unsatisfiable, r)
+	}
+
+	if p.FailedAssumption(3) {
+		t.Errorf("FailedAssumption: Expected false, got true")
+	}
+	if r := p.FailedAssumptions(); len(r) != 0 {
+		t.Errorf("FailedAssumptions: Expected []Literal{}, got %v", r)
+	}
+}
+
 // ExampleAssume demonstrates how to use Assume and related methods.
 func ExamplePigosat_Assume() {
 	var formula = Formula{{1, 2, 3}, {1, 2}, {2, 3}}

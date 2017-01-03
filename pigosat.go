@@ -98,6 +98,12 @@ type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT
 	lock *sync.RWMutex
+	// This allows us to avoid the crash demonstrated in
+	// TestCrashOnAssumeSatAfterUnsatThenCallFailedAssumptions. We keep it
+	// set to false except when Solve just returned Unsatisfiable and nothing
+	// has happened to render assumptions invalid (see documentation for
+	// Assume).
+	couldHaveFailedAssumptions bool
 }
 
 // Struct Options contains optional settings for the Pigosat constructor. Zero
@@ -257,6 +263,7 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 		if clause[count-1] != 0 { // 0 tells PicoSAT where to stop reading array
 			clause = append(clause, 0)
 		}
+		p.couldHaveFailedAssumptions = false
 		// int picosat_add_lits (PicoSAT *, int * lits);
 		C.picosat_add_lits(p.p, (*C.int)(&clause[0]))
 	}
@@ -300,9 +307,13 @@ func (p *Pigosat) blocksol(sol Solution) {
 //    }
 func (p *Pigosat) Solve() (status Status, solution Solution) {
 	defer p.ready(false)()
+	p.couldHaveFailedAssumptions = false
 	// int picosat_sat (PicoSAT *, int decision_limit);
 	status = Status(C.picosat_sat(p.p, -1))
-	if status == Unsatisfiable || status == Unknown {
+	if status == Unsatisfiable {
+		p.couldHaveFailedAssumptions = true
+		return
+	} else if status == Unknown {
 		return
 	} else if status != Satisfiable {
 		panic(fmt.Errorf("Unknown sat status: %d", status))

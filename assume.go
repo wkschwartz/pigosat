@@ -20,6 +20,7 @@ var cZero C.int = 0
 // NextMaxSatisfiableAssumptions operate on the current, valid assumptions.
 func (p *Pigosat) Assume(lit Literal) {
 	defer p.ready(false)()
+	p.couldHaveFailedAssumptions = false
 	// void picosat_assume (PicoSAT *, int lit);
 	C.picosat_assume(p.p, C.int(lit))
 }
@@ -33,7 +34,7 @@ func (p *Pigosat) Assume(lit Literal) {
 func (p *Pigosat) FailedAssumption(lit Literal) bool {
 	defer p.ready(true)()
 	// picoast_failed_assumption SIGABRTs if the following conditional is true
-	if p.res() != Unsatisfiable || lit == 0 {
+	if p.res() != Unsatisfiable || lit == 0 || !p.couldHaveFailedAssumptions {
 		return false
 	}
 	// int picosat_failed_assumption (PicoSAT *, int lit);
@@ -62,7 +63,7 @@ func litArrayToSlice(litPtr *C.int, maxLen int) []Literal {
 // for which FailedAssumption returns true. See FailedAssumption.
 func (p *Pigosat) FailedAssumptions() []Literal {
 	defer p.ready(false)() // Overwrites what becomes litPtr below.
-	if p.res() != Unsatisfiable {
+	if p.res() != Unsatisfiable || !p.couldHaveFailedAssumptions {
 		return []Literal{}
 	}
 

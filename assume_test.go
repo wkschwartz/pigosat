@@ -146,6 +146,28 @@ func TestCrashOnAssumeSatAfterUnsatThenCallFailedAssumptions(t *testing.T) {
 	}
 }
 
+// TestNextMaxSatisfiableAssumptionsAsIterator tests that NextMaxSatisfiableAssumptions
+// can be used as an iterator. In particular, this test panics if Solve calls
+// BlockSolution when Solve returns Satisfiable.
+func TestNextMaxSatisfiableAssumptionsAsIterator(t *testing.T) {
+	var formula = Formula{{1, 2, 3}, {1, 2}, {2, 3}}
+	p, _ := New(nil)
+	p.AddClauses(formula)
+	p.Assume(1)
+	p.Assume(-2)
+	p.Solve()
+	p.Assume(-1)
+	p.Assume(-2)
+	ms := make([][]Literal, 0)
+	for m := p.NextMaxSatisfiableAssumptions(); len(m) > 0; m = p.NextMaxSatisfiableAssumptions() {
+		ms = append(ms, m)
+	}
+	expected := [][]Literal{{-1}, {-2}}
+	if !reflect.DeepEqual(ms, expected) {
+		t.Errorf("Expected %v. Got %v.", expected, ms)
+	}
+}
+
 // ExamplePigosat_Assume demonstrates how to use Assume and related methods.
 func ExamplePigosat_Assume() {
 	var formula = Formula{{1, 2, 3}, {1, 2}, {2, 3}}

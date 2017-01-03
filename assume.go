@@ -21,44 +21,6 @@ var cZero C.int = 0
 // Solve() returns. Valid means they remain 'assumed' until a call to
 // AddClauses(), Assume(), or another Solve(), following the first Solve().
 // They need to stay valid for FailedAssumptions(), etc., to work correctly.
-//
-// Example:
-//
-//   p.Assume(1)                // assume unit clause Clause{1, 0}
-//   p.Assume(-2)               // additionally assume unit clause Clause{-2, 0}
-//   res, solution := p.Solve() // assumes 1 and -2 to hold
-//
-//   if res == Unsatisfiable {
-//       if p.FailedAssumption(1) {
-//           // unit clause Clause{1, 0} was necessary to derive Unsatisfiable
-//       }
-//       if p.FailedAssumption(-2) {
-//           // unit clause Clause{-2, 0} was necessary to derive Unsatisfiable
-//       }
-//       // at least one but also both could be necessary
-//
-//       p.Assume(17)  // Previous assumptions are removed. Now assume unit
-//                     // clause Clause{17, 0} for the next call to Solve().
-//
-//   } else if res == Satisfiable {
-//       // The assumptions 1 and -2 hold, so the follow assertion succeeds.
-//       if !(solution[1] && !solution[2]) {
-//           panic("assertion failed")
-//       }
-//
-//       // Assumptions valid, as always, until calls to AddClauses(), etc.
-//       // Further, when entering Solve() the solver knows that the previous
-//       // call returned SAT and it can safely reset the previous assumptions.
-//   } else  {
-//       // res == Unknown
-//
-//       // Assumptions valid, but assignment invalid except for top level
-//       // assigned literals which necessarily need to have this value if the
-//       // formula is SAT
-//
-//       // As above the solver knows that the previous call returned Unknown
-//       // and will reset assumptions before doing anything else.
-//   }
 func (p *Pigosat) Assume(lit Literal) {
 	defer p.ready(false)()
 	// void picosat_assume (PicoSAT *, int lit);

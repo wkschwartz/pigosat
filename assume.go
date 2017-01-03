@@ -94,7 +94,6 @@ func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
 // valid when you called NextMaxSatisfiableAssumptions. Use it as follows.
 // First, set your formula and assumptions using AddClauses and Assume. Then
 // iterate over the different maximal satisfiable subsets of assumptions with:
-//    var mss []Literal
 //    for mss := p.NextMaxSatisfiableAssumptions(); len(mss) > 0; mss = p.NextMaxSatisfiableAssumptions() {
 //        // Do stuff with mss
 //    }

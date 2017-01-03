@@ -146,7 +146,7 @@ func TestCrashOnAssumeSatAfterUnsatThenCallFailedAssumptions(t *testing.T) {
 	}
 }
 
-// ExampleAssume demonstrates how to use Assume and related methods.
+// ExamplePigosat_Assume demonstrates how to use Assume and related methods.
 func ExamplePigosat_Assume() {
 	var formula = Formula{{1, 2, 3}, {1, 2}, {2, 3}}
 	p, _ := New(nil)
@@ -200,12 +200,12 @@ func ExamplePigosat_Assume() {
 	// Output:
 	// Formula: [[1 2 3] [1 2] [2 3]]
 	// No assumptions: Satisfiable solution == {1:true , 2:true , 3:true}
-
+	//
 	// **** SATISFIABLE ASSUMPTIONS ****
 	// Assume  1, -2 : Number of clauses: 3
 	//                 Satisfiable solution == {1:true , 2:false, 3:true}
 	// Assume      -3: Satisfiable solution == {1:true , 2:true , 3:false}
-
+	//
 	// **** UNSATISFIABLE ASSUMPTIONS ****
 	// Assume -1, -2 : Unsatisfiable solution == {}
 	//                 Failed assumptions: [-1 -2]

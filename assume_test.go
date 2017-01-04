@@ -110,8 +110,9 @@ func TestAssumptionsFailing(t *testing.T) {
 	}
 }
 
-// TestAssumptionsNoCrash tests that if you call Assume with a satisfiable
-// assumption after Solve returns UNSAT then FailedAssumption(s) does not crash.
+// TestCrashOnAssumeSatAfterUnsatThenCallFailedAssumptions tests that if you
+// call Assume with a satisfiable assumption after Solve returns UNSAT then
+// FailedAssumption(s) does not crash.
 func TestCrashOnAssumeSatAfterUnsatThenCallFailedAssumptions(t *testing.T) {
 	p, _ := New(nil)
 	p.AddClauses(formulaTests[0].formula)

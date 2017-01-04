@@ -1,6 +1,9 @@
 package pigosat
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 // TestMinimize will test optimal values from `from` to `to`.
 const (
@@ -74,7 +77,7 @@ func checkFeasibleRecord(t *testing.T, v parameters, args []arguments) {
 			continue
 		}
 		if arg.k != last.k || arg.status != last.status ||
-			!equal(arg.solution, last.solution) {
+			!reflect.DeepEqual(arg.solution, last.solution) {
 			t.Errorf("%+v: feasible=%+v record=%+v", v, last, arg)
 		}
 	}

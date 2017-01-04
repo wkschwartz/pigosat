@@ -23,19 +23,6 @@ func abs(x Literal) int {
 	return int(x)
 }
 
-// equal returns true if the two slices have the same contents.
-func equal(x, y Solution) bool {
-	if len(x) != len(y) {
-		return false
-	}
-	for i := 0; i < len(x); i++ {
-		if x[i] != y[i] {
-			return false
-		}
-	}
-	return true
-}
-
 // Evaluate a formula when the variables take on the values given by the
 // solution.
 func evaluate(formula Formula, solution Solution) bool {
@@ -220,7 +207,7 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest,
 	if status != ft.status {
 		t.Errorf("Test %d: Expected status %d but got %d", i, ft.status, status)
 	}
-	if !equal(solution, ft.expected) {
+	if !reflect.DeepEqual(solution, ft.expected) {
 		t.Errorf("Test %d: Expected solution %v but got %v", i, ft.expected,
 			solution)
 	}
@@ -263,7 +250,7 @@ func TestIterSolveRes(t *testing.T) {
 				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
 					i, this, ft.formula)
 			}
-			if equal(this, last) {
+			if reflect.DeepEqual(this, last) {
 				t.Errorf("Test %d: Duplicate solution: %v", i, this)
 			}
 			if res = p.Res(); res != status {
@@ -314,7 +301,7 @@ func TestBlockSolution(t *testing.T) {
 				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
 					i, solution, ft.formula)
 			}
-			if equal(solution, ft.expected) {
+			if reflect.DeepEqual(solution, ft.expected) {
 				t.Errorf("Test %d: Duplicate solution: %v", i, solution)
 			}
 		}

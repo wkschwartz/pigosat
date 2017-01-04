@@ -277,7 +277,7 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 		p.couldHaveFailedAssumptions = false
 		count = len(clause)
 		if count == 0 {
-			// Empty clause: add a clause with only literal 0
+			// int picosat_add (PicoSAT *, int lit);
 			C.picosat_add(p.p, 0)
 			continue
 		}

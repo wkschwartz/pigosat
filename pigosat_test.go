@@ -203,13 +203,8 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest,
 		t.Errorf("Test %d: Expected %d variables, got %d", i, ft.variables,
 			p.Variables())
 	}
-	// If satisfiable, add 1 because solving adds a clause
-	offset := 0
-	if ft.status == Satisfiable {
-		offset = 1
-	}
-	if p.AddedOriginalClauses() != ft.clauses+offset {
-		t.Errorf("Test %d: Expected %d clauses, got %d", i, ft.clauses+offset,
+	if p.AddedOriginalClauses() != ft.clauses {
+		t.Errorf("Test %d: Expected %d clauses, got %d", i, ft.clauses,
 			p.AddedOriginalClauses())
 	}
 	if s := p.Seconds(); s <= 0 || s > time.Millisecond {
@@ -251,6 +246,7 @@ func TestIterSolveRes(t *testing.T) {
 			}
 			last = this
 			count++
+			p.BlockSolution(this)
 		}
 		if count < 2 && ft.status == Satisfiable && !ft.onlyOne {
 			t.Errorf("Test %d: Only one solution", i)

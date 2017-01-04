@@ -309,6 +309,7 @@ func (p *Pigosat) blocksol(sol Solution) {
 // no more feasible solutions:
 //    for status, solution := p.Solve(); status == Satisfiable; status, solution = p.Solve() {
 //        // Do stuff with status, solution
+//        p.BlockSolution(solution)
 //    }
 func (p *Pigosat) Solve() (status Status, solution Solution) {
 	defer p.ready(false)()
@@ -333,7 +334,6 @@ func (p *Pigosat) Solve() (status Status, solution Solution) {
 			panic(fmt.Errorf("Variable %d was assigned value 0", i))
 		}
 	}
-	p.blocksol(solution)
 	return
 }
 

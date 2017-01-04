@@ -99,10 +99,10 @@ type Pigosat struct {
 	p    *C.PicoSAT
 	lock *sync.RWMutex
 	// This allows us to avoid the crash demonstrated in
-	// TestCrashOnAssumeSatAfterUnsatThenCallFailedAssumptions. We keep it
-	// set to false except when Solve just returned Unsatisfiable and nothing
-	// has happened to render assumptions invalid (see documentation for
-	// Assume).
+	// TestCrashOnUnsatResetFailedAssumptions. We keep it set to false except
+	// when Solve just returned Unsatisfiable and nothing has happened to render
+	// assumptions invalid (see documentation for Assume). We reset it to false
+	// every time assumptions become invalid.
 	couldHaveFailedAssumptions bool
 }
 
@@ -293,6 +293,7 @@ func (p *Pigosat) blocksol(sol Solution) {
 			clause[i-1] = i
 		}
 	}
+	p.couldHaveFailedAssumptions = false
 	// int picosat_add_lits (PicoSAT *, int * lits);
 	C.picosat_add_lits(p.p, &clause[0])
 }

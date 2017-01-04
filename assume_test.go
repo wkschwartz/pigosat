@@ -110,41 +110,62 @@ func TestAssumptionsFailing(t *testing.T) {
 	}
 }
 
-// TestCrashOnAssumeSatAfterUnsatThenCallFailedAssumptions tests that if you
-// call Assume with a satisfiable assumption after Solve returns UNSAT then
-// FailedAssumption(s) does not crash.
-func TestCrashOnAssumeSatAfterUnsatThenCallFailedAssumptions(t *testing.T) {
-	p, _ := New(nil)
-	p.AddClauses(formulaTests[0].formula)
+// TestCrashOnUnsatResetFailedAssumptions tests that if you reset the
+// assumptions after Solve returns UNSAT then FailedAssumption(s) do not crash.
+func TestCrashOnUnsatResetFailedAssumptions(t *testing.T) {
+	ft := formulaTests[0]
+
+	assertUnsat := func(test string, p *Pigosat) {
+		if r := p.Res(); r != Unsatisfiable {
+			t.Fatalf("Test %s: Expected %v, got %v", test, Unsatisfiable, r)
+		}
+	}
+
+	setup := func() *Pigosat {
+		p, _ := New(nil)
+		p.AddClauses(ft.formula)
+		p.Assume(3)
+		p.Assume(4)
+		p.Assume(5)
+		p.Solve()
+
+		assertUnsat("setup", p)
+		if !p.FailedAssumption(3) {
+			t.Fatalf("setup: Expected assumption '3' to fail")
+		}
+		assertUnsat("setup", p)
+		return p
+	}
+
+	assert := func(test string, p *Pigosat) {
+		assertUnsat(test, p)
+		// Either the next two assertions work or they crash with this message:
+		//   *** picosat: API usage: expected to be in UNSAT state
+		//   SIGABRT: abort
+		if p.FailedAssumption(3) {
+			t.Errorf("Test %s: Did not expect assumption '3' to fail", test)
+		}
+		if r := p.FailedAssumptions(); len(r) != 0 {
+			t.Errorf("Test %s: Expected []Literal{}, got %v", test, r)
+		}
+	}
+
+	// Assume
+	p := setup()
 	p.Assume(3)
-	p.Assume(4)
-	p.Assume(5)
-	p.Solve()
+	assert("Assume", p)
 
-	if r := p.Res(); r != Unsatisfiable {
-		t.Fatalf("Expected %v, got %v", Unsatisfiable, r)
+	// BlockSolution
+	p = setup()
+	if err := p.BlockSolution(ft.expected); err != nil {
+		t.Fatalf(err.Error())
 	}
-	if !p.FailedAssumption(3) {
-		t.Fatalf("Expected literal 3 to be a failed assumption")
-	}
-	if r := p.Res(); r != Unsatisfiable {
-		t.Fatalf("Expected %v, got %v", Unsatisfiable, r)
-	}
+	assert("BlockSolution", p)
 
-	p.Assume(3)
-	if r := p.Res(); r != Unsatisfiable {
-		t.Fatalf("Expected %v, got %v", Unsatisfiable, r)
-	}
-
-	// Either the next two assertions work or they crash with this message:
-	//   *** picosat: API usage: expected to be in UNSAT state
-	//   SIGABRT: abort
-	if p.FailedAssumption(3) {
-		t.Errorf("FailedAssumption: Expected false, got true")
-	}
-	if r := p.FailedAssumptions(); len(r) != 0 {
-		t.Errorf("FailedAssumptions: Expected []Literal{}, got %v", r)
-	}
+	// AddClauses
+	p = setup()
+	p.AddClauses(Formula{{3}})
+	assert("AddClauses", p)
 }
 
 // TestNextMaxSatisfiableAssumptionsAsIterator tests that NextMaxSatisfiableAssumptions

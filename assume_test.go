@@ -166,6 +166,10 @@ func TestCrashOnUnsatResetFailedAssumptions(t *testing.T) {
 	p = setup()
 	p.AddClauses(Formula{{3}})
 	assert("AddClauses", p)
+
+	p = setup()
+	p.AddClauses(Formula{nil})
+	assert("AddClauses Empty", p)
 }
 
 // TestNextMaxSatisfiableAssumptionsAsIterator tests that NextMaxSatisfiableAssumptions

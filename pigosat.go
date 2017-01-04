@@ -272,6 +272,7 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 	defer p.ready(false)()
 	var count int
 	for _, clause := range clauses {
+		p.couldHaveFailedAssumptions = false
 		count = len(clause)
 		if count == 0 {
 			// Empty clause: add a clause with only literal 0
@@ -281,7 +282,6 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 		if clause[count-1] != 0 { // 0 tells PicoSAT where to stop reading array
 			clause = append(clause, 0)
 		}
-		p.couldHaveFailedAssumptions = false
 		// int picosat_add_lits (PicoSAT *, int * lits);
 		C.picosat_add_lits(p.p, (*C.int)(&clause[0]))
 	}

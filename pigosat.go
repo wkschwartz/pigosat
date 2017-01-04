@@ -274,6 +274,8 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 	for _, clause := range clauses {
 		count = len(clause)
 		if count == 0 {
+			// Empty clause: add a clause with only literal 0
+			C.picosat_add(p.p, 0)
 			continue
 		}
 		if clause[count-1] != 0 { // 0 tells PicoSAT where to stop reading array

@@ -50,7 +50,7 @@ func litArrayToSlice(litPtr *C.int, maxLen int) []Literal {
 	lits := []Literal{}
 	for *litPtr != 0 {
 		if len(lits) >= maxLen {
-			panic("Array not zero-terminated")
+			panic("The array's length is greater than the maxLen parameter.")
 		}
 		lits = append(lits, Literal(*litPtr))
 		litPtr = (*C.int)(unsafe.Pointer(

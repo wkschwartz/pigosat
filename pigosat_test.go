@@ -228,7 +228,7 @@ func TestFormulas(t *testing.T) {
 	for i, ft := range formulaTests {
 		p, _ := New(nil)
 		p.AddClauses(ft.formula)
-		status, solution := p.Solve()
+		solution, status := p.Solve()
 		wasExpected(t, i, p, &ft, status, solution)
 	}
 }
@@ -245,7 +245,7 @@ func TestIterSolveRes(t *testing.T) {
 		if res = p.Res(); res != Unknown {
 			t.Errorf("Test %d: Res = %d before Solve called", i, res)
 		}
-		for status, this = p.Solve(); status == Satisfiable; status, this = p.Solve() {
+		for this, status = p.Solve(); status == Satisfiable; this, status = p.Solve() {
 			if !evaluate(ft.formula, this) {
 				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
 					i, this, ft.formula)
@@ -292,7 +292,7 @@ func TestBlockSolution(t *testing.T) {
 			if err := p.BlockSolution(ft.expected); err != nil {
 				t.Errorf("Test %d: Unexpected error from BlockSolution: %v", i, err)
 			}
-			status, solution = p.Solve()
+			solution, status = p.Solve()
 			if status != ft.status {
 				t.Errorf("Test %d: Got status %v, expected %v", i, status,
 					ft.status)
@@ -318,7 +318,7 @@ func TestPropLimit(t *testing.T) {
 		for limit := uint64(1); limit < 20; limit++ {
 			p, _ := New(&Options{PropagationLimit: limit})
 			p.AddClauses(ft.formula)
-			status, solution := p.Solve()
+			solution, status := p.Solve()
 			if status == Unknown {
 				seenUn = true
 				if seenSat {
@@ -490,7 +490,7 @@ func TestWriteClausalCore(t *testing.T) {
 	for i, ft := range formulaTests {
 		p, _ := New(&Options{EnableTrace: true})
 		p.AddClauses(ft.formula)
-		status, _ := p.Solve()
+		_, status := p.Solve()
 
 		buf.Reset()
 		err := p.WriteClausalCore(&buf)
@@ -518,7 +518,7 @@ func TestWriteTrace(t *testing.T) {
 	for i, ft := range formulaTests {
 		p, _ := New(&Options{EnableTrace: true})
 		p.AddClauses(ft.formula)
-		status, _ := p.Solve()
+		_, status := p.Solve()
 
 		buf.Reset()
 		err := p.WriteCompactTrace(&buf)
@@ -590,7 +590,7 @@ func Example_readme() {
 	p.AddClauses(Formula{{1, 2}, {1}, {-2}})
 	fmt.Printf("# variables == %d\n", p.Variables())
 	fmt.Printf("# clauses == %d\n", p.AddedOriginalClauses())
-	status, solution := p.Solve()
+	solution, status := p.Solve()
 	if status == Satisfiable {
 		fmt.Println("status == pigosat.Satisfiable")
 	}

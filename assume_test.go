@@ -58,7 +58,7 @@ func TestAssumptionsSucceeding(t *testing.T) {
 			for _, lit := range at.assumpts {
 				p.Assume(lit)
 			}
-			status, sol := p.Solve()
+			sol, status := p.Solve()
 			if status != Satisfiable {
 				break
 			}
@@ -200,7 +200,7 @@ func ExamplePigosat_Assume() {
 	p, _ := New(nil)
 	p.AddClauses(formula)
 	fmt.Println("Formula:", formula)
-	status, solution := p.Solve()
+	solution, status := p.Solve()
 	fmt.Println("No assumptions:", status, "solution ==", solution)
 
 	// Satisfiable assumptions
@@ -210,13 +210,13 @@ func ExamplePigosat_Assume() {
 	p.Assume(-2)
 	// Assumptions do not change the number of clauses.
 	fmt.Println("Assume  1, -2 : Number of clauses:", p.AddedOriginalClauses())
-	status, solution = p.Solve()
+	solution, status = p.Solve()
 	fmt.Println("               ", status, "solution ==", solution)
 
 	// Calls to p.AddClauses or p.Assume cancel assumptions 1 and -2
 	// immediately, or a second call to p.Solve also cancels the assumptions.
 	p.Assume(-3)
-	status, solution = p.Solve()
+	solution, status = p.Solve()
 	fmt.Println("Assume      -3:", status, "solution ==", solution)
 
 	// Unsatisfiable assumptions
@@ -224,7 +224,7 @@ func ExamplePigosat_Assume() {
 	fmt.Println("**** UNSATISFIABLE ASSUMPTIONS ****")
 	p.Assume(-1)                 // assume unit clause Clause{-1, 0}
 	p.Assume(-2)                 // assume unit clause Clause{-2, 0}
-	status, solution = p.Solve() // assumes -1 and -2 hold
+	solution, status = p.Solve() // assumes -1 and -2 hold
 	fmt.Println("Assume -1, -2 :", status, "solution ==", solution)
 	// Assumptions -1 and -2 caused unsatisfiability.
 	fmt.Println("                Failed assumptions:", p.FailedAssumptions())

@@ -326,11 +326,11 @@ func (p *Pigosat) blocksol(sol Solution) {
 //
 // Solve can be used like an iterator, yielding a new solution until there are
 // no more feasible solutions:
-//    for status, solution := p.Solve(); status == Satisfiable; status, solution = p.Solve() {
-//        // Do stuff with status, solution
+//    for solution, status := p.Solve(); status == Satisfiable; solution, status = p.Solve() {
+//        // Do stuff with solution, status
 //        p.BlockSolution(solution)
 //    }
-func (p *Pigosat) Solve() (status Status, solution Solution) {
+func (p *Pigosat) Solve() (solution Solution, status Status) {
 	defer p.ready(false)()
 	p.couldHaveFailedAssumptions = false
 	// int picosat_sat (PicoSAT *, int decision_limit);

@@ -26,14 +26,14 @@ type arguments struct {
 
 type minimizer struct {
 	t      *testing.T
-	args   chan arguments
+	args   []arguments
 	params parameters
 }
 
 func newMinimizer(lo, hi, opt int, t *testing.T) *minimizer {
 	m := &minimizer{params: parameters{lower: lo, upper: hi, optimal: opt}, t: t}
 	// A little testing by hand suggests 2 is faster than 0 or (to - from)
-	m.args = make(chan arguments, 2)
+	m.args = make([]arguments, 2)
 	return m
 }
 
@@ -52,25 +52,24 @@ func (m *minimizer) IsFeasible(k int) (status Status, solution Solution) {
 	if k < m.params.optimal {
 		status = Unsatisfiable
 	}
-	m.args <- arguments{k, status, solution}
+	m.args = append(m.args, arguments{k, status, solution})
 	return
 }
 
 func (m *minimizer) RecordSolution(k int, status Status, solution Solution) {
-	m.args <- arguments{k, status, solution}
+	m.args = append(m.args, arguments{k, status, solution})
 }
 
 // Check that RecordSolution is called with IsFeasible's output every time.
-func checkFeasibleRecord(t *testing.T, v parameters, args <-chan arguments) {
+func checkFeasibleRecord(t *testing.T, v parameters, args []arguments) {
 	var last arguments
-	count := 0
-	for arg := range args {
-		// Each call to IsFeasible is paried with a go RecordSolution. Thus
-		// we're looking for pairs of arguments.
+	if len(args)%2 != 0 {
+		t.Fatalf("Entries in 'args' not recorded in IsFeasible/RecordSolution pairs")
+	}
+	for count, arg := range args {
+		// Each call to IsFeasible is paried with a RecordSolution. Thus we're
+		// looking for pairs of arguments.
 		if count%2 == 0 {
-			if arg.status == -1 { // sentinel
-				return
-			}
 			last = arg
 			continue
 		}
@@ -90,9 +89,8 @@ func TestMinimize(t *testing.T) {
 		for lo := from; lo <= hi; lo++ {
 			for opt := lo; opt <= hi+1; opt++ {
 				m := newMinimizer(lo, hi, opt, t)
-				go checkFeasibleRecord(t, m.params, m.args)
 				min, optimal, feasible := Minimize(m)
-				m.args <- arguments{status: -1} // sentinel
+				checkFeasibleRecord(t, m.params, m.args)
 				if opt <= hi && min != opt {
 					t.Errorf("%+v: min=%d", m.params, min)
 				}

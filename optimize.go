@@ -24,8 +24,7 @@ type Minimizer interface {
 	IsFeasible(k int) (status Status, solution Solution)
 
 	// RecordSolution allows types implementing this interface to store
-	// solutions for after minimization has finished. Must be safe for parallel
-	// use.
+	// solutions for after minimization has finished.
 	RecordSolution(k int, status Status, solution Solution)
 }
 
@@ -34,23 +33,22 @@ type Minimizer interface {
 // status Unsatisfiable, optimal will be set to true. If
 // m.IsFeasible(m.UpperBound()) returns status Unsatisfiable, feasible will be
 // set to false. Every return value from IsFeasible will be passed to
-// m.RecordSolution in a separate goroutine. Panic if m.UpperBound() <
-// m.LowerBound(). If m.IsFeasible returns a status other than Satisfiable, it
-// will be treated as Unsatisfiable.
+// m.RecordSolution. Panic if m.UpperBound() < m.LowerBound(). If m.IsFeasible
+// returns a status other than Satisfiable, it will be treated as Unsatisfiable.
 func Minimize(m Minimizer) (min int, optimal, feasible bool) {
 	hi, lo := m.UpperBound(), m.LowerBound()
 	if hi < lo {
 		panic(fmt.Errorf("UpperBound()=%d < LowerBound()=%d", hi, lo))
 	}
 	status, solution := m.IsFeasible(hi)
-	go m.RecordSolution(hi, status, solution)
+	m.RecordSolution(hi, status, solution)
 	if status != Satisfiable {
 		return hi, false, false
 	}
 	for hi > lo {
 		k := lo + (hi-lo)/2 // avoid overfow. See sort/search.go in stdlib
 		status, solution = m.IsFeasible(k)
-		go m.RecordSolution(k, status, solution)
+		m.RecordSolution(k, status, solution)
 		if status == Satisfiable {
 			hi = k
 		} else {

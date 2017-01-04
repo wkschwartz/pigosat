@@ -43,9 +43,6 @@ func evaluate(formula Formula, solution Solution) bool {
 	var index int
 	for _, clause := range formula {
 		c = false
-		if len(clause) == 0 {
-			continue
-		}
 		for _, literal := range clause {
 			index = abs(literal)
 			// Solution isn't even the right length

@@ -39,7 +39,7 @@ type Literal int32
 
 // Clauses are slices of literals ORed together. An optional zero ends a clause,
 // even in the middle of a slice; [1, 0, 2] is the same as [1, 0] is the same as
-// [1].
+// [1]. An empty Clause always evaluates false and thus can never be satisfied.
 type Clause []Literal
 
 // Formulas are slices of Clauses ANDed together.
@@ -268,18 +268,22 @@ func (p *Pigosat) Seconds() time.Duration {
 // negative, it must end up false. Each clause ORs the literals together. All
 // the clauses are ANDed together. An optional zero ends a clause, even in the
 // middle of a slice; [1, 0, 2] is the same as [1, 0] is the same as [1].
+// Adding an empty Clause, either Clause{} or nil, in the Formula renders p's
+// underlying formula unsatisfiable.
 func (p *Pigosat) AddClauses(clauses Formula) {
 	defer p.ready(false)()
 	var count int
 	for _, clause := range clauses {
+		p.couldHaveFailedAssumptions = false
 		count = len(clause)
 		if count == 0 {
+			// int picosat_add (PicoSAT *, int lit);
+			C.picosat_add(p.p, 0)
 			continue
 		}
 		if clause[count-1] != 0 { // 0 tells PicoSAT where to stop reading array
 			clause = append(clause, 0)
 		}
-		p.couldHaveFailedAssumptions = false
 		// int picosat_add_lits (PicoSAT *, int * lits);
 		C.picosat_add_lits(p.p, (*C.int)(&clause[0]))
 	}

@@ -43,9 +43,6 @@ func evaluate(formula Formula, solution Solution) bool {
 	var index int
 	for _, clause := range formula {
 		c = false
-		if len(clause) == 0 {
-			continue
-		}
 		for _, literal := range clause {
 			index = abs(literal)
 			// Solution isn't even the right length
@@ -113,8 +110,8 @@ var formulaTests = []formulaTest{
 -1 2 0
 -1 -2 0
 `},
-	// For testing that empty clauses are skipped and 0s end clauses
-	3: {Formula{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {}, {-3, -4, 0}, nil},
+	// For testing that 0s end clauses
+	3: {Formula{{1, -5, 4, 0, 9}, {-1, 5, 3, 4, 0, 100}, {-3, -4, 0}},
 		5, 3, Satisfiable,
 		Solution{false, true, false, false, false, true}, false,
 		`p cnf 5 3
@@ -194,6 +191,19 @@ var formulaTests = []formulaTest{
 -1 4 0
 -1 -4 0
 `},
+	// Adding empty clauses causes Solve to deduce Unsatisfiable
+	10: {Formula{{1, 2}, {}},
+		2, 2, Unsatisfiable, nil, false,
+		`p cnf 2 2
+1 2 0
+0
+`},
+	11: {Formula{{1, 2}, nil},
+		2, 2, Unsatisfiable, nil, false,
+		`p cnf 2 2
+1 2 0
+0
+`},
 }
 
 // Ensure our expected solutions are correct.
@@ -222,7 +232,7 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest,
 		t.Errorf("Test %d: Expected %d clauses, got %d", i, ft.clauses,
 			p.AddedOriginalClauses())
 	}
-	if s := p.Seconds(); s <= 0 || s > time.Millisecond {
+	if s := p.Seconds(); s < 0 || s > time.Millisecond {
 		t.Errorf("Test %d: Test took a suspicious amount of time: %v", i, s)
 	}
 }

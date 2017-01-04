@@ -14,6 +14,7 @@ package pigosat
 // #include "picosat.h" /* REMEMBER TO UPDATE PicosatVersion BELOW! */
 import "C"
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -48,6 +49,22 @@ type Formula []Clause
 // variable. The zeroth element has no meaning and is always false.
 type Solution []bool
 
+// String returns a readable string like "{1:true, 2:false, ...}" for Solution
+// s.
+func (s Solution) String() string {
+	var buffer bytes.Buffer
+	buffer.WriteString("{")
+	if len(s) <= 1 {
+		buffer.WriteString("}")
+	} else {
+		for variable, value := range s[1 : len(s)-1] {
+			buffer.WriteString(fmt.Sprintf("%d:%-5v, ", variable+1, value))
+		}
+		buffer.WriteString(fmt.Sprintf("%d:%v}", len(s)-1, s[len(s)-1]))
+	}
+	return buffer.String()
+}
+
 // Statuses are returned by Pigosat.Solve to indicate success or failure.
 type Status int
 
@@ -61,6 +78,18 @@ const (
 	Unsatisfiable Status = C.PICOSAT_UNSATISFIABLE
 )
 
+// For use in Status.String.
+var statusNames = map[Status]string{Unknown: "Unknown",
+	Satisfiable: "Satisfiable", Unsatisfiable: "Unsatisfiable"}
+
+// String returns a readable string such as "Satisfiable" from Status s.
+func (s Status) String() string {
+	if name, ok := statusNames[s]; ok {
+		return name
+	}
+	return fmt.Sprintf("Status(%d)", s)
+}
+
 // Struct Pigosat must be created with New and stores the state of the
 // solver. It is safe for concurrent use.
 //
@@ -70,6 +99,12 @@ type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT
 	lock sync.RWMutex
+	// This allows us to avoid the crash demonstrated in
+	// TestCrashOnUnsatResetFailedAssumptions. We keep it set to false except
+	// when Solve just returned Unsatisfiable and nothing has happened to render
+	// assumptions invalid (see documentation for Assume). We reset it to false
+	// every time assumptions become invalid.
+	couldHaveFailedAssumptions bool
 }
 
 // Struct Options contains optional settings for the Pigosat constructor. Zero
@@ -244,6 +279,7 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 		if clause[count-1] != 0 { // 0 tells PicoSAT where to stop reading array
 			clause = append(clause, 0)
 		}
+		p.couldHaveFailedAssumptions = false
 		// int picosat_add_lits (PicoSAT *, int * lits);
 		C.picosat_add_lits(p.p, (*C.int)(&clause[0]))
 	}
@@ -271,6 +307,7 @@ func (p *Pigosat) blocksol(sol Solution) {
 			clause[i-1] = i
 		}
 	}
+	p.couldHaveFailedAssumptions = false
 	// int picosat_add_lits (PicoSAT *, int * lits);
 	C.picosat_add_lits(p.p, &clause[0])
 }
@@ -278,16 +315,26 @@ func (p *Pigosat) blocksol(sol Solution) {
 // Solve the formula and return the status of the solution: one of the constants
 // Unsatisfiable, Satisfiable, or Unknown. If satisfiable, return a slice
 // indexed by the variables in the formula (so the first element is always
-// false). Solve can be used like an iterator, yielding a new solution until
-// there are no more feasible solutions:
+// false). Assigning these boolen values to the variables will satisfy the
+// formula and assumptions that p.AddClauses and p.Assume have added to the
+// Pigosat object. See the documentation for Assume regarding when assumptions
+// are valid.
+//
+// Solve can be used like an iterator, yielding a new solution until there are
+// no more feasible solutions:
 //    for status, solution := p.Solve(); status == Satisfiable; status, solution = p.Solve() {
 //        // Do stuff with status, solution
+//        p.BlockSolution(solution)
 //    }
 func (p *Pigosat) Solve() (status Status, solution Solution) {
 	defer p.ready(false)()
+	p.couldHaveFailedAssumptions = false
 	// int picosat_sat (PicoSAT *, int decision_limit);
 	status = Status(C.picosat_sat(p.p, -1))
-	if status == Unsatisfiable || status == Unknown {
+	if status == Unsatisfiable {
+		p.couldHaveFailedAssumptions = true
+		return
+	} else if status == Unknown {
 		return
 	} else if status != Satisfiable {
 		panic(fmt.Errorf("Unknown sat status: %d", status))
@@ -302,13 +349,18 @@ func (p *Pigosat) Solve() (status Status, solution Solution) {
 			panic(fmt.Errorf("Variable %d was assigned value 0", i))
 		}
 	}
-	p.blocksol(solution)
 	return
 }
 
 // Res returns Solve's last status, or Unknown if Solve hasn't yet been called.
 func (p *Pigosat) Res() (status Status) {
 	defer p.ready(true)()
+	return p.res()
+}
+
+// res returns Solve's last status, or Unknown if Solve hasn't yet been called.
+// res does not lock, whereas Res locks.
+func (p *Pigosat) res() (status Status) {
 	// int picosat_res (PicoSAT *);
 	return Status(C.picosat_res(p.p))
 }

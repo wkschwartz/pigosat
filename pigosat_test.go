@@ -218,13 +218,8 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest,
 		t.Errorf("Test %d: Expected %d variables, got %d", i, ft.variables,
 			p.Variables())
 	}
-	// If satisfiable, add 1 because solving adds a clause
-	offset := 0
-	if ft.status == Satisfiable {
-		offset = 1
-	}
-	if p.AddedOriginalClauses() != ft.clauses+offset {
-		t.Errorf("Test %d: Expected %d clauses, got %d", i, ft.clauses+offset,
+	if p.AddedOriginalClauses() != ft.clauses {
+		t.Errorf("Test %d: Expected %d clauses, got %d", i, ft.clauses,
 			p.AddedOriginalClauses())
 	}
 	if s := p.Seconds(); s <= 0 || s > time.Millisecond {
@@ -266,6 +261,7 @@ func TestIterSolveRes(t *testing.T) {
 			}
 			last = this
 			count++
+			p.BlockSolution(this)
 		}
 		if count < 2 && ft.status == Satisfiable && !ft.onlyOne {
 			t.Errorf("Test %d: Only one solution", i)
@@ -554,6 +550,40 @@ func TestWriteTrace(t *testing.T) {
 		if buf.Len() == 0 {
 			t.Errorf("Test %d: Unsatisfiable formula to produced no extended trace", i)
 		}
+	}
+}
+
+func TestSolutionString(t *testing.T) {
+	const expectedString = "{1:true , 2:false, 3:false, 4:false, 5:true}"
+	if s := formulaTests[0].expected.String(); s != expectedString {
+		t.Errorf("Expected %v. Got %v.", expectedString, s)
+	}
+	if s := (Solution{}).String(); s != "{}" {
+		t.Errorf("Expected {}. Got %v", s)
+	}
+	if s := (Solution{false}).String(); s != "{}" {
+		t.Errorf("Expected {}. Got %v", s)
+	}
+	if s := (Solution{false, true}).String(); s != "{1:true}" {
+		t.Errorf("Expected {1:true}. Got %v", s)
+	}
+	if s := (Solution{false, true, true}).String(); s != "{1:true , 2:true}" {
+		t.Errorf("Expected {1:true, 2:true}. Got %v", s)
+	}
+}
+
+func TestStatusString(t *testing.T) {
+	if s := Unknown.String(); s != "Unknown" {
+		t.Errorf(`Expected "Unknown". Got %v`, s)
+	}
+	if s := Satisfiable.String(); s != "Satisfiable" {
+		t.Errorf(`Expected "Satisfiable". Got %v`, s)
+	}
+	if s := Unsatisfiable.String(); s != "Unsatisfiable" {
+		t.Errorf(`Expected "Unsatisfiable". Got %v`, s)
+	}
+	if s := Status(17).String(); s != "Status(17)" {
+		t.Errorf(`Expected "Status(17)". Got %v`, s)
 	}
 }
 

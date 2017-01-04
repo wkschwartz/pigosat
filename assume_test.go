@@ -10,16 +10,12 @@ import (
 
 func TestLitArrayToSlice(t *testing.T) {
 	// null pointers
-	assertPanics(t, "null pointer", "litArrayToSlice",
-		func() { litArrayToSlice(nil, 0) })
-	assertPanics(t, "null pointer", "litArrayToSlice",
-		func() { litArrayToSlice(nil, 1) })
+	assertPanics(t, "litArrayToSlice", func() { litArrayToSlice(nil, 0) })
+	assertPanics(t, "litArrayToSlice", func() { litArrayToSlice(nil, 1) })
 	// not zero terminated
 	badPtr := &cArray123[0]
-	assertPanics(t, "not zero terminated - 1", "litArrayToSlice",
-		func() { litArrayToSlice(badPtr, 1) })
-	assertPanics(t, "not zero terminated - 2", "litArrayToSlice",
-		func() { litArrayToSlice(badPtr, 2) })
+	assertPanics(t, "litArrayToSlice", func() { litArrayToSlice(badPtr, 1) })
+	assertPanics(t, "litArrayToSlice", func() { litArrayToSlice(badPtr, 2) })
 	// zero length
 	for maxLen := 0; maxLen <= 2; maxLen++ {
 		if ls := litArrayToSlice(&cZero, 0); len(ls) != 0 {
@@ -50,33 +46,35 @@ func TestAssumptionsSucceeding(t *testing.T) {
 	}
 
 	for i, at := range successTests {
-		p, _ := New(nil)
-		p.AddClauses(formulaTests[0].formula)
+		t.Run(fmt.Sprintf("successTests[%d]", i), func(t *testing.T) {
+			p, _ := New(nil)
+			p.AddClauses(formulaTests[0].formula)
 
-		count := 0
-		for ; ; count++ {
-			for _, lit := range at.assumpts {
-				p.Assume(lit)
-			}
-			sol, status := p.Solve()
-			if status != Satisfiable {
-				break
-			}
+			count := 0
+			for ; ; count++ {
+				for _, lit := range at.assumpts {
+					p.Assume(lit)
+				}
+				sol, status := p.Solve()
+				if status != Satisfiable {
+					break
+				}
 
-			// All the UNSAT methods should give zero answers.
-			if p.FailedAssumption(at.assumpts[0]) {
-				t.Errorf("Test %d: FailedAssumption: expected %v not to be failed", i, at.assumpts[0])
-			}
-			if r := p.FailedAssumptions(); !reflect.DeepEqual(r, []Literal{}) {
-				t.Errorf("Test %d: FailedAssumptions: expected [], got %v", i, r)
-			}
+				// All the UNSAT methods should give zero answers.
+				if p.FailedAssumption(at.assumpts[0]) {
+					t.Errorf("FailedAssumption: expected %v not to be failed", at.assumpts[0])
+				}
+				if r := p.FailedAssumptions(); !reflect.DeepEqual(r, []Literal{}) {
+					t.Errorf("FailedAssumptions: expected [], got %v", r)
+				}
 
-			p.BlockSolution(sol)
-		}
-		if count != at.solutions {
-			t.Errorf("Test %d: Expected %d solution(s) for assumptions %v; got %d",
-				i, at.solutions, at.assumpts, count)
-		}
+				p.BlockSolution(sol)
+			}
+			if count != at.solutions {
+				t.Errorf("Expected %d solution(s) for assumptions %v; got %d",
+					at.solutions, at.assumpts, count)
+			}
+		})
 	}
 }
 
@@ -115,61 +113,48 @@ func TestAssumptionsFailing(t *testing.T) {
 func TestCrashOnUnsatResetFailedAssumptions(t *testing.T) {
 	ft := formulaTests[0]
 
-	assertUnsat := func(test string, p *Pigosat) {
+	assertUnsat := func(p *Pigosat) {
 		if r := p.Res(); r != Unsatisfiable {
-			t.Fatalf("Test %s: Expected %v, got %v", test, Unsatisfiable, r)
+			t.Fatalf("Expected %v, got %v", Unsatisfiable, r)
 		}
 	}
 
-	setup := func() *Pigosat {
-		p, _ := New(nil)
-		p.AddClauses(ft.formula)
-		p.Assume(3)
-		p.Assume(4)
-		p.Assume(5)
-		p.Solve()
+	run := func(name string, f func(*Pigosat)) {
+		t.Run(name, func(t *testing.T) {
+			p, _ := New(nil)
+			p.AddClauses(ft.formula)
+			p.Assume(3)
+			p.Assume(4)
+			p.Assume(5)
+			p.Solve()
 
-		assertUnsat("setup", p)
-		if !p.FailedAssumption(3) {
-			t.Fatalf("setup: Expected assumption '3' to fail")
-		}
-		assertUnsat("setup", p)
-		return p
+			assertUnsat(p)
+			if !p.FailedAssumption(3) {
+				t.Fatalf("Expected assumption '3' to fail")
+			}
+			assertUnsat(p)
+			f(p)
+			assertUnsat(p)
+			// Either the next two assertions work or they crash with this message:
+			//   *** picosat: API usage: expected to be in UNSAT state
+			//   SIGABRT: abort
+			if p.FailedAssumption(3) {
+				t.Errorf("Did not expect assumption '3' to fail")
+			}
+			if r := p.FailedAssumptions(); len(r) != 0 {
+				t.Errorf("Expected []Literal{}, got %v", r)
+			}
+		})
 	}
 
-	assert := func(test string, p *Pigosat) {
-		assertUnsat(test, p)
-		// Either the next two assertions work or they crash with this message:
-		//   *** picosat: API usage: expected to be in UNSAT state
-		//   SIGABRT: abort
-		if p.FailedAssumption(3) {
-			t.Errorf("Test %s: Did not expect assumption '3' to fail", test)
+	run("Assume", func(p *Pigosat) { p.Assume(3) })
+	run("BlockSolution", func(p *Pigosat) {
+		if err := p.BlockSolution(ft.expected); err != nil {
+			t.Fatalf(err.Error())
 		}
-		if r := p.FailedAssumptions(); len(r) != 0 {
-			t.Errorf("Test %s: Expected []Literal{}, got %v", test, r)
-		}
-	}
-
-	// Assume
-	p := setup()
-	p.Assume(3)
-	assert("Assume", p)
-
-	// BlockSolution
-	p = setup()
-	if err := p.BlockSolution(ft.expected); err != nil {
-		t.Fatalf(err.Error())
-	}
-	assert("BlockSolution", p)
-
-	// AddClauses
-	p = setup()
-	p.AddClauses(Formula{{3}})
-	assert("AddClauses", p)
-
-	p = setup()
-	p.AddClauses(Formula{nil})
-	assert("AddClauses Empty", p)
+	})
+	run("AddClauses-empty", func(p *Pigosat) { p.AddClauses(Formula{{3}}) })
+	run("AddClauses-nil", func(p *Pigosat) { p.AddClauses(Formula{nil}) })
 }
 
 // TestNextMaxSatisfiableAssumptionsAsIterator tests that NextMaxSatisfiableAssumptions

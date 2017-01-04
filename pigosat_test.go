@@ -202,34 +202,36 @@ func init() {
 	}
 }
 
-func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest,
+func wasExpected(t *testing.T, p *Pigosat, ft *formulaTest,
 	status Status, solution Solution) {
 	if status != ft.status {
-		t.Errorf("Test %d: Expected status %d but got %d", i, ft.status, status)
+		t.Errorf("Expected status %d but got %d", ft.status, status)
 	}
 	if !reflect.DeepEqual(solution, ft.expected) {
-		t.Errorf("Test %d: Expected solution %v but got %v", i, ft.expected,
+		t.Errorf("Expected solution %v but got %v", ft.expected,
 			solution)
 	}
 	if p.Variables() != ft.variables {
-		t.Errorf("Test %d: Expected %d variables, got %d", i, ft.variables,
+		t.Errorf("Expected %d variables, got %d", ft.variables,
 			p.Variables())
 	}
 	if p.AddedOriginalClauses() != ft.clauses {
-		t.Errorf("Test %d: Expected %d clauses, got %d", i, ft.clauses,
+		t.Errorf("Expected %d clauses, got %d", ft.clauses,
 			p.AddedOriginalClauses())
 	}
 	if s := p.Seconds(); s < 0 || s > time.Millisecond {
-		t.Errorf("Test %d: Test took a suspicious amount of time: %v", i, s)
+		t.Errorf("Test took a suspicious amount of time: %v", s)
 	}
 }
 
 func TestFormulas(t *testing.T) {
 	for i, ft := range formulaTests {
-		p, _ := New(nil)
-		p.AddClauses(ft.formula)
-		solution, status := p.Solve()
-		wasExpected(t, i, p, &ft, status, solution)
+		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
+			p, _ := New(nil)
+			p.AddClauses(ft.formula)
+			solution, status := p.Solve()
+			wasExpected(t, p, &ft, status, solution)
+		})
 	}
 }
 
@@ -239,166 +241,175 @@ func TestIterSolveRes(t *testing.T) {
 	var status, res Status
 	var this, last Solution
 	for i, ft := range formulaTests {
-		p, _ := New(nil)
-		p.AddClauses(ft.formula)
-		count := 0
-		if res = p.Res(); res != Unknown {
-			t.Errorf("Test %d: Res = %d before Solve called", i, res)
-		}
-		for this, status = p.Solve(); status == Satisfiable; this, status = p.Solve() {
-			if !evaluate(ft.formula, this) {
-				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
-					i, this, ft.formula)
+		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
+			p, _ := New(nil)
+			p.AddClauses(ft.formula)
+			count := 0
+			if res = p.Res(); res != Unknown {
+				t.Errorf("Res = %d before Solve called", res)
 			}
-			if reflect.DeepEqual(this, last) {
-				t.Errorf("Test %d: Duplicate solution: %v", i, this)
+			for this, status = p.Solve(); status == Satisfiable; this, status = p.Solve() {
+				if !evaluate(ft.formula, this) {
+					t.Errorf("Solution %v does not satisfy formula %v",
+						this, ft.formula)
+				}
+				if reflect.DeepEqual(this, last) {
+					t.Errorf("Duplicate solution: %v", this)
+				}
+				if res = p.Res(); res != status {
+					t.Errorf("Status = %d != %d = Res", status, res)
+				}
+				last = this
+				count++
+				p.BlockSolution(this)
 			}
-			if res = p.Res(); res != status {
-				t.Errorf("Test %d: Status = %d != %d = Res", i, status, res)
+			if count < 2 && ft.status == Satisfiable && !ft.onlyOne {
+				t.Errorf("Only one solution")
 			}
-			last = this
-			count++
-			p.BlockSolution(this)
-		}
-		if count < 2 && ft.status == Satisfiable && !ft.onlyOne {
-			t.Errorf("Test %d: Only one solution", i)
-		}
-		if res = p.Res(); res != Unsatisfiable {
-			t.Errorf("Test %d: Res = %d after Solve finished", i, res)
-		}
+			if res = p.Res(); res != Unsatisfiable {
+				t.Errorf("Res = %d after Solve finished", res)
+			}
+		})
 	}
 }
 
 func TestBlockSolution(t *testing.T) {
 	var status Status
 	for i, ft := range formulaTests {
-		p, _ := New(nil)
+		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
+			p, _ := New(nil)
 
-		// Test bad inputs: one too short (remember sol[0] is always blank)
-		solution := make(Solution, p.Variables())
-		if err := p.BlockSolution(solution); err == nil {
-			t.Errorf("Test %d: Expected error when solution too short", i)
-		}
-		// Now it'll be one too long
-		solution = append(solution, true)
-		solution = append(solution, true)
-		if err := p.BlockSolution(solution); err == nil {
-			t.Errorf("Test %d: Expected error when solution too long", i)
-		}
+			// Test bad inputs: one too short (remember sol[0] is always blank)
+			solution := make(Solution, p.Variables())
+			if err := p.BlockSolution(solution); err == nil {
+				t.Errorf("Expected error when solution too short")
+			}
+			// Now it'll be one too long
+			solution = append(solution, true)
+			solution = append(solution, true)
+			if err := p.BlockSolution(solution); err == nil {
+				t.Errorf("Expected error when solution too long")
+			}
 
-		// Solve should not return ft.expected if it's blocked
-		if ft.status == Satisfiable && !ft.onlyOne {
-			p.AddClauses(ft.formula)
-			if err := p.BlockSolution(ft.expected); err != nil {
-				t.Errorf("Test %d: Unexpected error from BlockSolution: %v", i, err)
+			// Solve should not return ft.expected if it's blocked
+			if ft.status == Satisfiable && !ft.onlyOne {
+				p.AddClauses(ft.formula)
+				if err := p.BlockSolution(ft.expected); err != nil {
+					t.Errorf("Unexpected error from BlockSolution: %v", err)
+				}
+				solution, status = p.Solve()
+				if status != ft.status {
+					t.Errorf("Got status %v, expected %v", status,
+						ft.status)
+				}
+				if !evaluate(ft.formula, solution) {
+					t.Errorf("Solution %v does not satisfy formula %v",
+						solution, ft.formula)
+				}
+				if reflect.DeepEqual(solution, ft.expected) {
+					t.Errorf("Duplicate solution: %v", solution)
+				}
 			}
-			solution, status = p.Solve()
-			if status != ft.status {
-				t.Errorf("Test %d: Got status %v, expected %v", i, status,
-					ft.status)
-			}
-			if !evaluate(ft.formula, solution) {
-				t.Errorf("Test %d: Solution %v does not satisfy formula %v",
-					i, solution, ft.formula)
-			}
-			if reflect.DeepEqual(solution, ft.expected) {
-				t.Errorf("Test %d: Duplicate solution: %v", i, solution)
-			}
-		}
+		})
 	}
 }
 
 // Also cribbed from Pycosat
 func TestPropLimit(t *testing.T) {
 	for i, ft := range formulaTests {
-		if ft.status != Satisfiable || ft.onlyOne {
-			continue
-		}
-		seenUn, seenSat := false, false
-		for limit := uint64(1); limit < 20; limit++ {
-			p, _ := New(&Options{PropagationLimit: limit})
-			p.AddClauses(ft.formula)
-			solution, status := p.Solve()
-			if status == Unknown {
-				seenUn = true
-				if seenSat {
-					t.Errorf("Test %d: Status unexpectedly changed back to "+
-						"Unknown at limit=%d", i, limit)
-				}
-			} else if status == Satisfiable {
-				seenSat = true
-				if !seenUn {
-					t.Errorf("Test %d: Propagation limit %d had no effect",
-						i, limit)
-				}
-				wasExpected(t, i, p, &ft, status, solution)
-			} else {
-				t.Error("unreachable")
+		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
+			if ft.status != Satisfiable || ft.onlyOne {
+				return
 			}
-		}
-		if !seenUn || !seenSat {
-			t.Errorf("Test %d: seenUn=%v, seenSat=%v", i, seenUn, seenSat)
-		}
+			seenUn, seenSat := false, false
+			for limit := uint64(1); limit < 20; limit++ {
+				p, _ := New(&Options{PropagationLimit: limit})
+				p.AddClauses(ft.formula)
+				solution, status := p.Solve()
+				if status == Unknown {
+					seenUn = true
+					if seenSat {
+						t.Errorf("Status unexpectedly changed back to "+
+							"Unknown at limit=%d", limit)
+					}
+				} else if status == Satisfiable {
+					seenSat = true
+					if !seenUn {
+						t.Errorf("Propagation limit %d had no effect", limit)
+					}
+					wasExpected(t, p, &ft, status, solution)
+				} else {
+					t.Error("unreachable")
+				}
+			}
+			if !seenUn || !seenSat {
+				t.Errorf("seenUn=%v, seenSat=%v", seenUn, seenSat)
+			}
+		})
 	}
 }
 
 // Test Option.OutputFile, Option.Verbosity, and Option.Prefix all at once.
 func TestOutput(t *testing.T) {
 	for i, ft := range formulaTests {
-		tmp, err := ioutil.TempFile("", "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			tmp.Close()
-			if err := os.Remove(tmp.Name()); err != nil {
-				t.Error(err)
+		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
+			tmp, err := ioutil.TempFile("", "")
+			if err != nil {
+				t.Fatal(err)
 			}
-		}()
-		prefix := fmt.Sprintf("asdf%x ", i)
-		p, err := New(&Options{Verbosity: 1, OutputFile: tmp, Prefix: prefix})
-		if err != nil {
-			t.Fatal(err)
-		}
-		p.AddClauses(ft.formula)
-		p.Solve()
-		// Now we make sure the file was written.
-		buf := make([]byte, len(prefix))
-		if n, err := tmp.ReadAt(buf, 0); err != nil {
-			// Something wrong with either Verbosity or OutputFile
-			t.Errorf("Output file not written to: bytes read=%d, err=%v", n, err)
-		}
-		if s := string(buf); s != prefix {
-			t.Errorf(`Wrong prefix: expected "%s" but got "%s"`, prefix, s)
-		}
+			defer func() {
+				tmp.Close()
+				if err := os.Remove(tmp.Name()); err != nil {
+					t.Error(err)
+				}
+			}()
+			prefix := fmt.Sprintf("asdf%x ", i)
+			p, err := New(&Options{Verbosity: 1, OutputFile: tmp, Prefix: prefix})
+			if err != nil {
+				t.Fatal(err)
+			}
+			p.AddClauses(ft.formula)
+			p.Solve()
+			// Now we make sure the file was written.
+			buf := make([]byte, len(prefix))
+			if n, err := tmp.ReadAt(buf, 0); err != nil {
+				// Something wrong with either Verbosity or OutputFile
+				t.Errorf("Output file not written to: bytes read=%d, err=%v", n, err)
+			}
+			if s := string(buf); s != prefix {
+				t.Errorf(`Wrong prefix: expected "%s" but got "%s"`, prefix, s)
+			}
+		})
 	}
 }
 
 // Without MeasureAllCalls, AddClasuses is not measured. With it, it is.
 func TestMeasureAllCalls(t *testing.T) {
 	for i, ft := range formulaTests {
-		p, _ := New(nil)
-		p.AddClauses(ft.formula)
-		if p.Seconds() != 0 {
-			t.Errorf("Test %d: Seconds without MeasureAllCalls should not "+
-				"measure AddClauses, but p.Seconds() == %v", i, p.Seconds())
-		}
-		p, _ = New(&Options{MeasureAllCalls: true})
-		p.AddClauses(ft.formula)
-		if p.Seconds() == 0 {
-			t.Errorf("Test %d: Seconds with MeasureAllCalls should measure "+
-				"AddClauses, but p.Seconds() == %v", i, p.Seconds())
-		}
+		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
+			p, _ := New(nil)
+			p.AddClauses(ft.formula)
+			if p.Seconds() != 0 {
+				t.Errorf("Seconds without MeasureAllCalls should not "+
+					"measure AddClauses, but p.Seconds() == %v", p.Seconds())
+			}
+			p, _ = New(&Options{MeasureAllCalls: true})
+			p.AddClauses(ft.formula)
+			if p.Seconds() == 0 {
+				t.Errorf("Seconds with MeasureAllCalls should measure "+
+					"AddClauses, but p.Seconds() == %v", p.Seconds())
+			}
+		})
 	}
 }
 
 // Assert that function f panics when called. test is a string identifying which
 // input data are being tested. method is a string identifying which method is
 // being tested in f.
-func assertPanics(t *testing.T, test, method string, f func()) {
+func assertPanics(t *testing.T, method string, f func()) {
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("Test %s: %s failed to panic", test, method)
+			t.Errorf("%s failed to panic", method)
 		}
 	}()
 	f()
@@ -410,19 +421,21 @@ func TestUninitializedOrDeleted(t *testing.T) {
 	b, _ = New(nil)
 	b.delete()
 	for name, p := range map[string]*Pigosat{"uninit": a, "deleted": b} {
-		assertPanics(t, name, "AddClauses", func() {
-			p.AddClauses(Formula{{1}, {2}})
+		t.Run(name, func(t *testing.T) {
+			assertPanics(t, "AddClauses", func() {
+				p.AddClauses(Formula{{1}, {2}})
+			})
+			assertPanics(t, "Variables", func() { p.Variables() })
+			assertPanics(t, "AddedOriginalClauses", func() {
+				p.AddedOriginalClauses()
+			})
+			assertPanics(t, "Seconds", func() { p.Seconds() })
+			assertPanics(t, "Solve", func() { p.Solve() })
+			assertPanics(t, "BlockSolution", func() {
+				p.BlockSolution(Solution{})
+			})
+			assertPanics(t, "Print", func() { p.Print(nil) })
 		})
-		assertPanics(t, name, "Variables", func() { p.Variables() })
-		assertPanics(t, name, "AddedOriginalClauses", func() {
-			p.AddedOriginalClauses()
-		})
-		assertPanics(t, name, "Seconds", func() { p.Seconds() })
-		assertPanics(t, name, "Solve", func() { p.Solve() })
-		assertPanics(t, name, "BlockSolution", func() {
-			p.BlockSolution(Solution{})
-		})
-		assertPanics(t, name, "Print", func() { p.Print(nil) })
 	}
 }
 
@@ -469,17 +482,19 @@ func TestCFileWriterWrapper(t *testing.T) {
 func TestPrint(t *testing.T) {
 	var buf bytes.Buffer
 	for i, ft := range formulaTests {
-		buf.Reset()
-		p, _ := New(nil)
-		p.AddClauses(ft.formula)
-		err := p.Print(&buf)
-		if err != nil {
-			t.Errorf("Test %d: Output file not written to: err=%v", i, err)
-		}
-		if !equalDimacs(buf.String(), ft.dimacs) {
-			t.Errorf("Test %d: expected >>>\n%s<<< but got >>>\n%s<<<", i,
-				ft.dimacs, buf.String())
-		}
+		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
+			buf.Reset()
+			p, _ := New(nil)
+			p.AddClauses(ft.formula)
+			err := p.Print(&buf)
+			if err != nil {
+				t.Errorf("Output file not written to: err=%v", err)
+			}
+			if !equalDimacs(buf.String(), ft.dimacs) {
+				t.Errorf("expected >>>\n%s<<< but got >>>\n%s<<<",
+					ft.dimacs, buf.String())
+			}
+		})
 	}
 }
 
@@ -488,27 +503,29 @@ func TestWriteClausalCore(t *testing.T) {
 	prefix := []byte(`p cnf`)
 
 	for i, ft := range formulaTests {
-		p, _ := New(&Options{EnableTrace: true})
-		p.AddClauses(ft.formula)
-		_, status := p.Solve()
+		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
+			p, _ := New(&Options{EnableTrace: true})
+			p.AddClauses(ft.formula)
+			_, status := p.Solve()
 
-		buf.Reset()
-		err := p.WriteClausalCore(&buf)
+			buf.Reset()
+			err := p.WriteClausalCore(&buf)
 
-		// Only Unsatisfiable solutions should produce clausal cores.
-		if err != nil {
-			if status == Unsatisfiable {
-				t.Errorf("Test %d: Error calling WriteClausalCore: %v", i, err)
+			// Only Unsatisfiable solutions should produce clausal cores.
+			if err != nil {
+				if status == Unsatisfiable {
+					t.Errorf("Error calling WriteClausalCore: %v", err)
+				}
+				return
 			}
-			continue
-		}
 
-		// Just make sure we write out a valid DIMACS format since we are only
-		// testing the API here, not the solutions.
-		if !bytes.HasPrefix(buf.Bytes(), prefix) {
-			t.Errorf("Test %d: Expected Unsatisfiable clausal core to "+
-				"start with 'p cnf'; got %q", i, buf)
-		}
+			// Just make sure we write out a valid DIMACS format since we are only
+			// testing the API here, not the solutions.
+			if !bytes.HasPrefix(buf.Bytes(), prefix) {
+				t.Errorf("Expected Unsatisfiable clausal core to "+
+					"start with 'p cnf'; got %q", buf)
+			}
+		})
 	}
 }
 
@@ -516,37 +533,39 @@ func TestWriteTrace(t *testing.T) {
 	var buf bytes.Buffer
 
 	for i, ft := range formulaTests {
-		p, _ := New(&Options{EnableTrace: true})
-		p.AddClauses(ft.formula)
-		_, status := p.Solve()
+		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
+			p, _ := New(&Options{EnableTrace: true})
+			p.AddClauses(ft.formula)
+			_, status := p.Solve()
 
-		buf.Reset()
-		err := p.WriteCompactTrace(&buf)
+			buf.Reset()
+			err := p.WriteCompactTrace(&buf)
 
-		// Only Unsatisfiable solutions should produce a trace
-		if err != nil {
-			if status == Unsatisfiable {
-				t.Errorf("Test %d: Error calling WriteCompactTrace: %v", i, err)
+			// Only Unsatisfiable solutions should produce a trace
+			if err != nil {
+				if status == Unsatisfiable {
+					t.Errorf("Error calling WriteCompactTrace: %v", err)
+				}
+				return
 			}
-			continue
-		}
-		if buf.Len() == 0 {
-			t.Errorf("Test %d: Unsatisfiable formula to produced no compact trace", i)
-		}
-
-		buf.Reset()
-		err = p.WriteExtendedTrace(&buf)
-
-		// Only Unsatisfiable solutions should produce a trace
-		if err != nil {
-			if status == Unsatisfiable {
-				t.Errorf("Test %d: Error calling WriteExtendedTrace: %v", i, err)
+			if buf.Len() == 0 {
+				t.Errorf("Unsatisfiable formula to produced no compact trace")
 			}
-			continue
-		}
-		if buf.Len() == 0 {
-			t.Errorf("Test %d: Unsatisfiable formula to produced no extended trace", i)
-		}
+
+			buf.Reset()
+			err = p.WriteExtendedTrace(&buf)
+
+			// Only Unsatisfiable solutions should produce a trace
+			if err != nil {
+				if status == Unsatisfiable {
+					t.Errorf("Error calling WriteExtendedTrace: %v", err)
+				}
+				return
+			}
+			if buf.Len() == 0 {
+				t.Errorf("Unsatisfiable formula to produced no extended trace")
+			}
+		})
 	}
 }
 

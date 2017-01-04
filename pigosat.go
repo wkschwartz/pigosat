@@ -9,13 +9,14 @@
 // p.Solve.
 package pigosat
 
-// #cgo CFLAGS: -DNDEBUG -O3
+// #cgo CFLAGS: -DNDEBUG -DTRACE -O3
 // #cgo windows CFLAGS: -DNGETRUSAGE -DNALLSIGNALS
 // #include "picosat.h" /* REMEMBER TO UPDATE PicosatVersion BELOW! */
 import "C"
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"sync"
@@ -97,7 +98,7 @@ func (s Status) String() string {
 type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT
-	lock *sync.RWMutex
+	lock sync.RWMutex
 	// This allows us to avoid the crash demonstrated in
 	// TestCrashOnUnsatResetFailedAssumptions. We keep it set to false except
 	// when Solve just returned Unsatisfiable and nothing has happened to render
@@ -133,6 +134,12 @@ type Options struct {
 	 * 'picosat_add' will trigger a call to 'getrusage'.
 	 */
 	MeasureAllCalls bool
+
+	// If you want to extract cores or proof traces using WriteClausalCore,
+	// WriteCompactTrace, WriteExtendedTrace with the current instance of
+	// Pigosat, then set this option true. This option may increase memory
+	// usage.
+	EnableTrace bool
 }
 
 // cfdopen returns a C-level FILE*. mode should be as described in fdopen(3).
@@ -141,11 +148,14 @@ func cfdopen(file *os.File, mode string) (*C.FILE, error) {
 	defer C.free(unsafe.Pointer(cmode))
 	// FILE * fdopen(int fildes, const char *mode);
 	cfile, err := C.fdopen(C.int(file.Fd()), cmode)
-	if err != nil {
-		return nil, err
-	}
+	// Sometimes err != nil even after successful call because fdopen caught an
+	// error but didn't clear errno. See
+	// http://comp.unix.programmer.narkive.com/g4gxgYP4/fdopen-cause-illegal-seek
 	if cfile == nil {
-		return nil, syscall.EINVAL
+		if err == nil {
+			err = syscall.EINVAL
+		}
+		return nil, err
 	}
 	return cfile, nil
 }
@@ -180,8 +190,14 @@ func New(options *Options) (*Pigosat, error) {
 			// void picosat_measure_all_calls (PicoSAT *);
 			C.picosat_measure_all_calls(p)
 		}
+		if options.EnableTrace {
+			if int(C.picosat_enable_trace_generation(p)) == 0 {
+				// The cgo CFLAGS guarantee trace generation using -DTRACE.
+				panic("trace generation was not enabled in build")
+			}
+		}
 	}
-	pgo := &Pigosat{p: p, lock: new(sync.RWMutex)}
+	pgo := &Pigosat{p: p, lock: sync.RWMutex{}}
 	runtime.SetFinalizer(pgo, (*Pigosat).delete)
 	return pgo, nil
 }
@@ -269,16 +285,14 @@ func (p *Pigosat) AddClauses(clauses Formula) {
 	}
 }
 
-// Print appends the CNF in DIMACS format to the given file.
-func (p *Pigosat) Print(file *os.File) error {
+// Print appends the formula in DIMACS format to the given io.Writer.
+func (p *Pigosat) Print(w io.Writer) error {
 	defer p.ready(true)()
-	cfile, err := cfdopen(file, "a")
-	if err != nil {
+	return cFileWriterWrapper(w, func(cfile *C.FILE) error {
+		// void picosat_print (PicoSAT *, FILE *);
+		_, err := C.picosat_print(p.p, cfile)
 		return err
-	}
-	// void picosat_print (PicoSAT *, FILE *);
-	_, err = C.picosat_print(p.p, cfile)
-	return err
+	})
 }
 
 // blocksol adds the inverse of the solution to the clauses.
@@ -363,4 +377,120 @@ func (p *Pigosat) BlockSolution(solution Solution) error {
 	}
 	p.blocksol(solution)
 	return nil
+}
+
+// WriteClausalCore writes in DIMACS format the clauses that were used in
+// deriving the empty clause. Requires that p was created with EnableTrace.
+func (p *Pigosat) WriteClausalCore(f io.Writer) error {
+	defer p.ready(true)()
+	if Status(C.picosat_res(p.p)) != Unsatisfiable {
+		return fmt.Errorf("expected to be in Unsatisfiable state")
+	}
+
+	return cFileWriterWrapper(f, func(cfile *C.FILE) error {
+		// void picosat_write_clausal_core (PicoSAT *, FILE * core_file);
+		_, err := C.picosat_write_clausal_core(p.p, cfile)
+		return err
+	})
+}
+
+// WriteCompactTrace writes a compact proof trace in TraceCheck format. Requires
+// that p was created with EnableTrace.
+func (p *Pigosat) WriteCompactTrace(f io.Writer) error {
+	defer p.ready(true)()
+	if Status(C.picosat_res(p.p)) != Unsatisfiable {
+		return fmt.Errorf("expected to be in Unsatisfiable state")
+	}
+
+	return cFileWriterWrapper(f, func(cfile *C.FILE) error {
+		// void picosat_write_compact_trace (PicoSAT *, FILE * trace_file);
+		_, err := C.picosat_write_compact_trace(p.p, cfile)
+		return err
+	})
+}
+
+// WriteExtendedTrace writes an extended proof trace in TraceCheck format.
+// Requires that p was created with EnableTrace.
+func (p *Pigosat) WriteExtendedTrace(f io.Writer) error {
+	defer p.ready(true)()
+	if Status(C.picosat_res(p.p)) != Unsatisfiable {
+		return fmt.Errorf("expected to be in Unsatisfiable state")
+	}
+
+	return cFileWriterWrapper(f, func(cfile *C.FILE) error {
+		// void picosat_write_extended_trace (PicoSAT *, FILE * trace_file);
+		_, err := C.picosat_write_extended_trace(p.p, cfile)
+		return err
+	})
+}
+
+// cFileWriterWrapper copies writeFn's data into w. writeFn takes a *C.FILE, and
+// whatever writeFn writes to that *C.FILE, cFileWriterWrapper will then
+// copy to w. This wrapper allows the Go API to write to io.Writers anything
+// PicoSAT writes to a *C.FILE. writeFn need not close the *C.FILE.
+func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
+	rp, wp, err := os.Pipe()
+	if err != nil {
+		return err
+	}
+	// To avoid double closing wp, close it explicitly at each error branch.
+	// Closing rp here is a data race with the io.Copy(w, rp) call in the
+	// goroutine below, but only if there is an error that causes the the outer
+	// function to return early. But then io.Copy will just return an error,
+	// which we (reasonably) ignore.
+	defer func() {
+		if e := rp.Close(); e != nil { // Don't hide prior errors.
+			err = e
+		}
+	}()
+
+	cfile, err := cfdopen(wp, "a") // wp.Close() below closes cfile.
+	if err != nil {
+		wp.Close()
+		return err
+	}
+
+	// We have to read from the pipe in a separate goroutine because the write
+	// end of the pipe will block if the pipe gets full.
+	errChan := make(chan error, 1)
+	go func() {
+		_, e := io.Copy(w, rp)
+		errChan <- e
+	}()
+
+	if err = writeFn(cfile); err != nil {
+		wp.Close()
+		return err
+	}
+
+	// We have to close wp or rp won't know it's hit the end of the data.
+	// Without flushing cfile, the data might get stuck in the C buffer.
+	if ok, err := C.fflush(cfile); ok != 0 {
+		wp.Close()
+		return err
+	}
+	if err = wp.Close(); err != nil {
+		return err
+	}
+	return <-errChan
+}
+
+// repeatWriteFn returns a writeFn for use with cFileWriterWrapper. The returned
+// writeFn writes the byte in content to the file `times` number of times.
+// If injected is a non-nil error, writeFn returns it instead of writing bytes.
+// This function is only for testing cFileWriterWrapper and is in this file only
+// because Cgo is not supported in test files. See TestCFileWriterWrapper
+// in pigosat_test.go.
+func repeatWriteFn(times int, content byte, injected error) func(*C.FILE) error {
+	return func(file *C.FILE) error {
+		if injected != nil {
+			return injected
+		}
+		for i := 0; i < times; i++ {
+			if _, e := C.fputc(C.int(content), file); e != nil {
+				return e
+			}
+		}
+		return nil
+	}
 }

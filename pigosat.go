@@ -28,7 +28,7 @@ import (
 var Version = SemanticVersion{1, 0, 0, "a", 0}
 
 // PicosatVersion is the version string from the underlying Picosat library.
-const PicosatVersion = "960"
+const PicosatVersion = "965"
 
 // Argument/result types for Pigosat methods.
 

@@ -194,12 +194,17 @@ var formulaTests = []formulaTest{
 -1 4 0
 -1 -4 0
 `},
-	// For testing that empty clauses are *not* skipped and make the formula UNSAT
-	10: {Formula{{1, 2, 3}, {1, -2, -3}, {}},
-		3, 3, Unsatisfiable, nil, false,
-		`p cnf 3 3
-1 2 3 0
-1 -2 -3 0
+	// Adding empty clauses causes Solve to deduce Unsatisfiable
+	10: {Formula{{1, 2}, {}},
+		2, 2, Unsatisfiable, nil, false,
+		`p cnf 2 2
+1 2 0
+0
+`},
+	11: {Formula{{1, 2}, nil},
+		2, 2, Unsatisfiable, nil, false,
+		`p cnf 2 2
+1 2 0
 0
 `},
 }

@@ -361,7 +361,7 @@ func TestOutput(t *testing.T) {
 			t.Fatal(err)
 		}
 		p.AddClauses(ft.formula)
-		_, _ = p.Solve()
+		p.Solve()
 		// Now we make sure the file was written.
 		buf := make([]byte, len(prefix))
 		if n, err := tmp.ReadAt(buf, 0); err != nil {
@@ -618,7 +618,7 @@ func BenchmarkSolve(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		p, _ := New(nil)
 		p.AddClauses(formula)
-		_, _ = p.Solve()
+		p.Solve()
 	}
 }
 

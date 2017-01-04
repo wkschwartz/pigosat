@@ -232,8 +232,8 @@ func wasExpected(t *testing.T, i int, p *Pigosat, ft *formulaTest,
 		t.Errorf("Test %d: Expected %d clauses, got %d", i, ft.clauses,
 			p.AddedOriginalClauses())
 	}
-	if s := p.Seconds(); s <= 0 || s > time.Millisecond {
-		t.Logf("Test %d: Test took a suspicious amount of time: %v", i, s)
+	if s := p.Seconds(); s < 0 || s > time.Millisecond {
+		t.Errorf("Test %d: Test took a suspicious amount of time: %v", i, s)
 	}
 }
 

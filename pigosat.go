@@ -369,9 +369,8 @@ func (p *Pigosat) res() (status Status) {
 	return Status(C.picosat_res(p.p))
 }
 
-// BlockSolution adds a clause to the formula ruling out a given solution. It is
-// a no-op if p is nil and returns an error if the solution is the wrong
-// length.
+// BlockSolution adds a clause to the formula ruling out a given solution. It
+// returns an error if the solution is the wrong length.
 func (p *Pigosat) BlockSolution(solution Solution) error {
 	defer p.ready(false)()
 	if n := int(C.picosat_variables(p.p)); len(solution) != n+1 {

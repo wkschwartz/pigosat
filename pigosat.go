@@ -365,6 +365,14 @@ func (p *Pigosat) res() (status Status) {
 	return Status(C.picosat_res(p.p))
 }
 
+// Inconsistent returns true if the formula is unsatisfiable because an empty
+// clause was added or derived.
+func (p *Pigosat) Inconsistent() bool {
+	defer p.ready(true)()
+	// int picosat_inconsistent  (PicoSAT *);
+	return C.picosat_inconsistent(p.p) != 0
+}
+
 // BlockSolution adds a clause to the formula ruling out a given solution. It is
 // a no-op if p is nil and returns an error if the solution is the wrong
 // length. There is no need to call BlockSolution after calling Pigosat.Solve,

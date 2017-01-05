@@ -437,6 +437,33 @@ func TestUninitializedOrDeleted(t *testing.T) {
 				p.BlockSolution(Solution{})
 			})
 			assertPanics(t, "Print", func() { p.Print(nil) })
+			assertPanics(t, "Res", func() { p.Res() })
+			assertPanics(t, "WriteClausalCore", func() {
+				var buf *bytes.Buffer
+				p.WriteClausalCore(buf)
+			})
+			assertPanics(t, "WriteCompactTrace", func() {
+				var buf *bytes.Buffer
+				p.WriteCompactTrace(buf)
+			})
+			assertPanics(t, "WriteExtendedTrace", func() {
+				var buf *bytes.Buffer
+				p.WriteExtendedTrace(buf)
+			})
+
+			assertPanics(t, "Assume", func() { p.Assume(1) })
+			assertPanics(t, "FailedAssumption", func() {
+				p.FailedAssumption(1)
+			})
+			assertPanics(t, "FailedAssumptions", func() {
+				p.FailedAssumptions()
+			})
+			assertPanics(t, "MaxSatisfiableAssumptions", func() {
+				p.MaxSatisfiableAssumptions()
+			})
+			assertPanics(t, "NextMaxSatisfiableAssumptions", func() {
+				p.NextMaxSatisfiableAssumptions()
+			})
 		})
 	}
 }

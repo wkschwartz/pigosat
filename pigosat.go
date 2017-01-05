@@ -2,11 +2,69 @@
 
 // Package pigosat is a Go binding for the PicoSAT satisfiability solver.
 //
-// Designing your model is beyond the scope of this document, but Googling
-// "satisfiability problem", "conjunctive normal form", and "DIMACS" are good
-// places to start. Once you have your model, create a Pigosat instance p with
-// pigosat.New, add the model to the instance with p.AddClauses, and solve with
-// p.Solve.
+// A satisfiability (SAT) solver is for solving expressions such as
+//     (a || b || !c) && (c || !d)
+// for logical variables a, b, c, and d so that the expression is true. The
+// whole expression is called a formula and each parenthesized unit is called a
+// clause. Variables such as c and their negations such as !c are called
+// literals. The SAT formulation PicoSAT, and thereby PiGoSAT, uses is called
+// "conjunctive normal form" (CNF) dictates that formulas are the conjunctions
+// (AND) of clauses, and clauses are the disjunction (OR) of literals. To allow
+// arbitrary numbers of literals, we think of variables as having names like
+// x_k, where k is an integer at least 1. Empty clauses evaluate to false.
+//
+// In PicoSAT, and thereby PiGoSAT, we refer to variable x_k simply as k.
+// Instead of a NOT operator ! as part of negated literals, we take the additive
+// inverse, so -k instead of !x_k. Zero is never the name of a variable, so we
+// can use it to mark the end of clauses. In PiGoSAT, the Literal type is an
+// integer type, the Clause type is a slice of Literals, and the Formula type is
+// a slice of Clauses. Thus, the formula above might be written as
+//     Formula{Clause{1, 2, -3, 0}, Clause{3, 4, 0}}
+// A solution to this formula assigns truth values to variables x_1, ..., x_4.
+// Using the Solution type, we could write a solution to the above formula as
+//     Solution{1: true, 2: false, 3: false, 4: false}
+// (Notice that the zeroth element is always false). This works because we can
+// substitute for the variables as follows
+//     (true || false || !false) && (false || !false)
+// which evaluates to true. There are many solutions to the formula. Another one
+// is
+//     Solution{1: false, 2: true, 3: false, 4: false}
+//
+// Use the Pigosat type to solve SAT problems as follows. First create a Pigosat
+// instance:
+//     p := New(nil).
+// The argument to New allows advanced users to pass in an Option instance. See
+// its documentation for details. Next, supply the Pigosat instance with your
+// formula:
+//     p.AddClauses(Formula{{1, 2, -3}, {3, 4}})
+// (This is also a correct way to write the formula for PiGoSAT.)
+//
+// Calling p.Solve() returns two objects. The second is a Status object, one of
+// the constants Satisfiable, Unsatisfiable, or Unknown. The latter is the
+// status when some (optional) limitation prevents Solve from working long
+// enough to find a solution. This is important because p.Solve() has time
+// complexity exponential in the size of the formula in the worst case, meaning
+// p.Solve() can be very slow. Hopefully you will get a status of Satisfiable or
+// Unsatisfiable. If the status is Unsatisfiable or Unknown, the solution will
+// be nil. If the status is Satisfiable, the first return value is a Solution
+// object, such as one of the ones above. The Solution object is a proof of
+// satisfiability in the Satisfiable case.
+//
+// p.Solve() can just tell you yes or no to a formula, but PiGoSAT has
+// facilities for optimization problems as well. Check out the Minimizer
+// interface and the Minimize function. The idea is that Minimize calls a
+// function you write called IsFeasible with different integer parameter values.
+// IsFeasible generates a formula based on this parameter, constructs a Pigosat
+// object, and calls its Solve method. If your problem is such that IsFeasible
+// always returns Satisfiable above some parameter value K and Unsatisfiable
+// below K, Minimize can find K. An example of where this is useful is in graph
+// coloring problems. The parameter can represent the number of available
+// colors. Your custom IsFeasible function generates a formula based on some
+// input graph to determine whether there is a proper coloring (an assignment
+// of colors to vertices so that neighboring vertices have different colors) of
+// the graph that uses at most that number of colors. Minimize can then
+// determine the chromatic number of the graph, the minimum number of colors
+// needed for a proper coloring.
 package pigosat
 
 // #cgo CFLAGS: -DNDEBUG -DTRACE -O3

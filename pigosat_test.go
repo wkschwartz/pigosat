@@ -632,31 +632,41 @@ func TestStatusString(t *testing.T) {
 	}
 }
 
-// This is the example from the README.
-func Example_readme() {
+func Example() {
 	p, _ := New(nil)
 
-	// Calling Delete is not usually necessary. Advanced users, see the Delete's
+	// Calling Delete is not usually necessary. Advanced users, see Delete's
 	// documentation.
 	defer p.Delete()
 
-	p.AddClauses(Formula{{1, 2}, {1}, {-2}})
-	fmt.Printf("# variables == %d\n", p.Variables())
-	fmt.Printf("# clauses == %d\n", p.AddedOriginalClauses())
+	p.AddClauses(Formula{{1, 2, -3}, {3, 4}})
+	fmt.Printf("Number of variables == %d\n", p.Variables())
+	fmt.Printf("Number of clauses   == %d\n", p.AddedOriginalClauses())
 	solution, status := p.Solve()
-	if status == Satisfiable {
-		fmt.Println("status == pigosat.Satisfiable")
+	fmt.Println(status, "solution ==", solution)
+	fmt.Printf("                     == %#v\n", solution)
+	p.BlockSolution(solution)
+	fmt.Println("\nMore solutions:")
+	for solution, status := p.Solve(); status == Satisfiable; solution, status = p.Solve() {
+		fmt.Println(status, "solution ==", solution)
+		p.BlockSolution(solution)
 	}
-	fmt.Printf("len(solution) == %d\n", len(solution))
-	fmt.Printf("solution[1] == %v\n", solution[1])
-	fmt.Printf("solution[2] == %v\n", solution[2])
 	// Output:
-	// # variables == 2
-	// # clauses == 3
-	// status == pigosat.Satisfiable
-	// len(solution) == 3
-	// solution[1] == true
-	// solution[2] == false
+	// Number of variables == 4
+	// Number of clauses   == 2
+	// Satisfiable solution == {1:true , 2:true , 3:true , 4:true}
+	//                      == pigosat.Solution{false, true, true, true, true}
+	//
+	// More solutions:
+	// Satisfiable solution == {1:true , 2:true , 3:true , 4:false}
+	// Satisfiable solution == {1:true , 2:true , 3:false, 4:true}
+	// Satisfiable solution == {1:true , 2:false, 3:false, 4:true}
+	// Satisfiable solution == {1:true , 2:false, 3:true , 4:true}
+	// Satisfiable solution == {1:true , 2:false, 3:true , 4:false}
+	// Satisfiable solution == {1:false, 2:false, 3:false, 4:true}
+	// Satisfiable solution == {1:false, 2:true , 3:false, 4:true}
+	// Satisfiable solution == {1:false, 2:true , 3:true , 4:true}
+	// Satisfiable solution == {1:false, 2:true , 3:true , 4:false}
 }
 
 // The element of formulaTests to use for benchmarking. This one is a longer

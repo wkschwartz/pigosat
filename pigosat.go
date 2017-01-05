@@ -90,9 +90,9 @@ const PicosatVersion = "965"
 
 // Argument/result types for Pigosat methods.
 
-// Literals describe the variables in the formula. A positive value indicates
-// the variable must be true; negative indicates it must be false. Variables
-// should be indexed from one. The zero literal indicates the end of a clause.
+// Literals are variables or their logical negations, except that we name
+// variables by ID numbers starting from one, and we use arithmetic negation to
+// indicate logical negation. The zero literal indicates the end of a clause.
 type Literal int32
 
 // Clauses are slices of literals ORed together. An optional zero ends a clause,

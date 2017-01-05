@@ -175,32 +175,29 @@ type Options struct {
 	// tries to find a solution.
 	PropagationLimit uint64
 
-	// Default (nil value) output file stdout. The client is responsible for
-	// closing the file after he is done with the Pigosat object.
+	// Default (nil value) output file is standard out. The client is
+	// responsible for closing the file after he is done with the Pigosat
+	// object.
 	OutputFile *os.File
 
-	/* Set verbosity level. A verbosity level of 1 and above prints more and
-	 * more detailed progress reports on the output file, set by
-	 * 'picosat_set_output'. Verbose messages are prefixed with the string set
-	 * by 'picosat_set_prefix'.
-	 */
+	// Set verbosity level. A verbosity level of 1 and above prints more and
+	// more detailed progress reports on the output file, set by OutputFile.
+	// Verbose messages are prefixed with the string set by Prefix.
 	Verbosity uint
 
 	// Set the prefix used for printing verbose messages and statistics.
 	// Default is "c ".
 	Prefix string
 
-	/* Measure all time spent in all calls in the solver.  By default only the
-	 * time spent in 'picosat_sat' is measured.  Enabling this function may for
-	 * instance triple the time needed to add large CNFs, since every call to
-	 * 'picosat_add' will trigger a call to 'getrusage'.
-	 */
+	// Measure all time spent in all calls in Picosat's solver (extra time in
+	// PiGoSAT is generally linear in the number of variables). By default only
+	// the time spent in PicoSAT's internal solver is measured. Setting this
+	// option may as much as triple the time needed to add large formulas.
 	MeasureAllCalls bool
 
 	// If you want to extract cores or proof traces using WriteClausalCore,
-	// WriteCompactTrace, WriteExtendedTrace with the current instance of
-	// Pigosat, then set this option true. This option may increase memory
-	// usage.
+	// WriteCompactTrace, WriteExtendedTrace, then set this option true. Doing
+	// so may increase memory usage.
 	EnableTrace bool
 }
 
@@ -224,6 +221,7 @@ func cfdopen(file *os.File, mode string) (*C.FILE, error) {
 
 // New returns a new Pigosat instance, ready to have literals added to it. The
 // error return value need only be checked if the OutputFile option is non-nil.
+// If options is nil, New chooses all defaults.
 func New(options *Options) (*Pigosat, error) {
 	// PicoSAT * picosat_init (void);
 	p := C.picosat_init()

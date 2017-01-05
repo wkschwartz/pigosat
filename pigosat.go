@@ -36,7 +36,7 @@
 // The argument to New allows advanced users to pass in an Option instance. See
 // its documentation for details. Next, supply the Pigosat instance with your
 // formula:
-//     p.AddClauses(Formula{{1, 2, -3}, {3, 4}})
+//     p.Add(Formula{{1, 2, -3}, {3, 4}})
 // (This is also a correct way to write the formula for PiGoSAT.)
 //
 // Calling p.Solve() returns two objects. The second is a Status object, one of
@@ -330,13 +330,13 @@ func (p *Pigosat) Seconds() time.Duration {
 	return time.Duration(float64(C.picosat_seconds(p.p)) * float64(time.Second))
 }
 
-// AddClauses appends a slice of Clauses to p's existing formula. See the
-// documentation for Literal, Clause, and Formula to understand how p.Solve
-// will interpret the formula.
+// Add appends a slice of Clauses to p's existing formula. See the documentation
+// for Literal, Clause, and Formula to understand how p.Solve will interpret the
+// formula.
 //
 // A zero in a clause terminates the clause even if the zero is not at the end
 // of the slice. An empty clause always causes the formula to be unsatisfiable.
-func (p *Pigosat) AddClauses(clauses Formula) {
+func (p *Pigosat) Add(clauses Formula) {
 	defer p.ready(false)()
 	var count int
 	for _, clause := range clauses {
@@ -386,9 +386,9 @@ func (p *Pigosat) blocksol(sol Solution) {
 // Unsatisfiable, Satisfiable, or Unknown. If satisfiable, return a slice
 // indexed by the variables in the formula (so the first element is always
 // false). Assigning these boolean values to the variables will satisfy the
-// formula and assumptions that p.AddClauses and p.Assume have added to the
-// Pigosat object. See the documentation for Assume regarding when assumptions
-// are valid.
+// formula and assumptions that p.Add and p.Assume have added to the Pigosat
+// object. See the documentation for Assume regarding when assumptions are
+// valid.
 //
 // Solve can be used like an iterator, yielding a new solution until there are
 // no more feasible solutions:

@@ -228,7 +228,7 @@ func TestFormulas(t *testing.T) {
 	for i, ft := range formulaTests {
 		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
 			p, _ := New(nil)
-			p.AddClauses(ft.formula)
+			p.Add(ft.formula)
 			solution, status := p.Solve()
 			wasExpected(t, p, &ft, status, solution)
 		})
@@ -243,7 +243,7 @@ func TestIterSolveRes(t *testing.T) {
 	for i, ft := range formulaTests {
 		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
 			p, _ := New(nil)
-			p.AddClauses(ft.formula)
+			p.Add(ft.formula)
 			count := 0
 			if res = p.Res(); res != Unknown {
 				t.Errorf("Res = %d before Solve called", res)
@@ -293,7 +293,7 @@ func TestBlockSolution(t *testing.T) {
 
 			// Solve should not return ft.expected if it's blocked
 			if ft.status == Satisfiable && !ft.onlyOne {
-				p.AddClauses(ft.formula)
+				p.Add(ft.formula)
 				if err := p.BlockSolution(ft.expected); err != nil {
 					t.Errorf("Unexpected error from BlockSolution: %v", err)
 				}
@@ -324,7 +324,7 @@ func TestPropLimit(t *testing.T) {
 			seenUn, seenSat := false, false
 			for limit := uint64(1); limit < 20; limit++ {
 				p, _ := New(&Options{PropagationLimit: limit})
-				p.AddClauses(ft.formula)
+				p.Add(ft.formula)
 				solution, status := p.Solve()
 				if status == Unknown {
 					seenUn = true
@@ -368,7 +368,7 @@ func TestOutput(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			p.AddClauses(ft.formula)
+			p.Add(ft.formula)
 			p.Solve()
 			// Ensure that closing p doesn't close the OutputFile.
 			p.Delete()
@@ -390,16 +390,16 @@ func TestMeasureAllCalls(t *testing.T) {
 	for i, ft := range formulaTests {
 		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
 			p, _ := New(nil)
-			p.AddClauses(ft.formula)
+			p.Add(ft.formula)
 			if p.Seconds() != 0 {
 				t.Errorf("Seconds without MeasureAllCalls should not "+
-					"measure AddClauses, but p.Seconds() == %v", p.Seconds())
+					"measure Add, but p.Seconds() == %v", p.Seconds())
 			}
 			p, _ = New(&Options{MeasureAllCalls: true})
-			p.AddClauses(ft.formula)
+			p.Add(ft.formula)
 			if p.Seconds() == 0 {
 				t.Errorf("Seconds with MeasureAllCalls should measure "+
-					"AddClauses, but p.Seconds() == %v", p.Seconds())
+					"Add, but p.Seconds() == %v", p.Seconds())
 			}
 		})
 	}
@@ -424,9 +424,7 @@ func TestUninitializedOrDeleted(t *testing.T) {
 	b.Delete()
 	for name, p := range map[string]*Pigosat{"uninit": a, "deleted": b} {
 		t.Run(name, func(t *testing.T) {
-			assertPanics(t, "AddClauses", func() {
-				p.AddClauses(Formula{{1}, {2}})
-			})
+			assertPanics(t, "Add", func() { p.Add(Formula{{1}, {2}}) })
 			assertPanics(t, "Variables", func() { p.Variables() })
 			assertPanics(t, "AddedOriginalClauses", func() {
 				p.AddedOriginalClauses()
@@ -514,7 +512,7 @@ func TestPrint(t *testing.T) {
 		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
 			buf.Reset()
 			p, _ := New(nil)
-			p.AddClauses(ft.formula)
+			p.Add(ft.formula)
 			err := p.Print(&buf)
 			if err != nil {
 				t.Errorf("Output file not written to: err=%v", err)
@@ -534,7 +532,7 @@ func TestWriteClausalCore(t *testing.T) {
 	for i, ft := range formulaTests {
 		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
 			p, _ := New(&Options{EnableTrace: true})
-			p.AddClauses(ft.formula)
+			p.Add(ft.formula)
 			_, status := p.Solve()
 
 			buf.Reset()
@@ -564,7 +562,7 @@ func TestWriteTrace(t *testing.T) {
 	for i, ft := range formulaTests {
 		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
 			p, _ := New(&Options{EnableTrace: true})
-			p.AddClauses(ft.formula)
+			p.Add(ft.formula)
 			_, status := p.Solve()
 
 			buf.Reset()
@@ -639,7 +637,7 @@ func Example() {
 	// documentation.
 	defer p.Delete()
 
-	p.AddClauses(Formula{{1, 2, -3}, {3, 4}})
+	p.Add(Formula{{1, 2, -3}, {3, 4}})
 	fmt.Printf("Number of variables == %d\n", p.Variables())
 	fmt.Printf("Number of clauses   == %d\n", p.AddedOriginalClauses())
 	solution, status := p.Solve()
@@ -680,7 +678,7 @@ func BenchmarkSolve(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		p, _ := New(nil)
-		p.AddClauses(formula)
+		p.Add(formula)
 		p.Solve()
 	}
 }
@@ -694,19 +692,19 @@ func BenchmarkCreate(b *testing.B) {
 	}
 	// Shut the compiler up about not using p.
 	b.StopTimer()
-	p.AddClauses(formulaTests[benchTest].formula)
+	p.Add(formulaTests[benchTest].formula)
 }
 
-// BenchmarkAddClauses measures how long it takes to add a formula to a Pigosat
-// object that already exists.
-func BenchmarkAddClauses(b *testing.B) {
+// BenchmarkAdd measures how long it takes to add a formula to a Pigosat object
+// that already exists.
+func BenchmarkAdd(b *testing.B) {
 	b.StopTimer()
 	formula := formulaTests[benchTest].formula
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		p, _ := New(nil)
 		b.StartTimer()
-		p.AddClauses(formula)
+		p.Add(formula)
 		b.StopTimer()
 	}
 }
@@ -719,7 +717,7 @@ func BenchmarkBlockSolution(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		p, _ := New(nil)
-		p.AddClauses(formulaTests[benchTest].formula)
+		p.Add(formulaTests[benchTest].formula)
 		b.StartTimer()
 		p.BlockSolution(solution)
 		b.StopTimer()

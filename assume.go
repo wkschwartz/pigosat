@@ -14,9 +14,9 @@ var cZero C.int = 0
 
 // Assume adds a temporary unit clause, i.e., a clause containing the one
 // literal you pass as an argument. An assumption remains valid after the next
-// call to Solve returns until a call to AddClauses, Assume, or a second Solve.
-// You can add arbitrary many assumptions before the next call to Solve.
-// Methods FailedAssumptions, FailedAssumptions, MaxSatisfiableAssumptions, and
+// call to Solve returns until a call to Add, Assume, or a second Solve. You can
+// add arbitrary many assumptions before the next call to Solve. Methods
+// FailedAssumptions, FailedAssumptions, MaxSatisfiableAssumptions, and
 // NextMaxSatisfiableAssumptions operate on the current, valid assumptions.
 func (p *Pigosat) Assume(lit Literal) {
 	defer p.ready(false)()
@@ -92,8 +92,8 @@ func (p *Pigosat) MaxSatisfiableAssumptions() []Literal {
 // BlockSolution, which modifies the underlying formula (thus changing the
 // result of AddedOriginalClauses), and then reassuming the solutions that were
 // valid when you called NextMaxSatisfiableAssumptions. Use it as follows.
-// First, set your formula and assumptions using AddClauses and Assume. Then
-// iterate over the different maximal satisfiable subsets of assumptions with:
+// First, set your formula and assumptions using Add and Assume. Then iterate
+// over the different maximal satisfiable subsets of assumptions with:
 //    for mss := p.NextMaxSatisfiableAssumptions(); len(mss) > 0; mss = p.NextMaxSatisfiableAssumptions() {
 //        // Do stuff with mss
 //    }

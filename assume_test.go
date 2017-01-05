@@ -48,7 +48,7 @@ func TestAssumptionsSucceeding(t *testing.T) {
 	for i, at := range successTests {
 		t.Run(fmt.Sprintf("successTests[%d]", i), func(t *testing.T) {
 			p, _ := New(nil)
-			p.AddClauses(formulaTests[0].formula)
+			p.Add(formulaTests[0].formula)
 
 			count := 0
 			for ; ; count++ {
@@ -80,7 +80,7 @@ func TestAssumptionsSucceeding(t *testing.T) {
 
 func TestAssumptionsFailing(t *testing.T) {
 	p, _ := New(nil)
-	p.AddClauses(formulaTests[0].formula)
+	p.Add(formulaTests[0].formula)
 	p.Assume(3)
 	p.Assume(4)
 	p.Assume(5)
@@ -122,7 +122,7 @@ func TestCrashOnUnsatResetFailedAssumptions(t *testing.T) {
 	run := func(name string, f func(*Pigosat)) {
 		t.Run(name, func(t *testing.T) {
 			p, _ := New(nil)
-			p.AddClauses(ft.formula)
+			p.Add(ft.formula)
 			p.Assume(3)
 			p.Assume(4)
 			p.Assume(5)
@@ -153,8 +153,8 @@ func TestCrashOnUnsatResetFailedAssumptions(t *testing.T) {
 			t.Fatalf(err.Error())
 		}
 	})
-	run("AddClauses-empty", func(p *Pigosat) { p.AddClauses(Formula{{3}}) })
-	run("AddClauses-nil", func(p *Pigosat) { p.AddClauses(Formula{nil}) })
+	run("Add-empty", func(p *Pigosat) { p.Add(Formula{{3}}) })
+	run("Add-nil", func(p *Pigosat) { p.Add(Formula{nil}) })
 }
 
 // TestNextMaxSatisfiableAssumptionsAsIterator tests that NextMaxSatisfiableAssumptions
@@ -163,7 +163,7 @@ func TestCrashOnUnsatResetFailedAssumptions(t *testing.T) {
 func TestNextMaxSatisfiableAssumptionsAsIterator(t *testing.T) {
 	var formula = Formula{{1, 2, 3}, {1, 2}, {2, 3}}
 	p, _ := New(nil)
-	p.AddClauses(formula)
+	p.Add(formula)
 	p.Assume(1)
 	p.Assume(-2)
 	p.Solve()
@@ -183,7 +183,7 @@ func TestNextMaxSatisfiableAssumptionsAsIterator(t *testing.T) {
 func ExamplePigosat_Assume() {
 	var formula = Formula{{1, 2, 3}, {1, 2}, {2, 3}}
 	p, _ := New(nil)
-	p.AddClauses(formula)
+	p.Add(formula)
 	fmt.Println("Formula:", formula)
 	solution, status := p.Solve()
 	fmt.Println("No assumptions:", status, "solution ==", solution)
@@ -198,7 +198,7 @@ func ExamplePigosat_Assume() {
 	solution, status = p.Solve()
 	fmt.Println("               ", status, "solution ==", solution)
 
-	// Calls to p.AddClauses or p.Assume cancel assumptions 1 and -2
+	// Calls to p.Add or p.Assume cancel assumptions 1 and -2
 	// immediately, or a second call to p.Solve also cancels the assumptions.
 	p.Assume(-3)
 	solution, status = p.Solve()
@@ -228,7 +228,7 @@ func ExamplePigosat_Assume() {
 	// Unknown status
 	// Assumptions are valid but p.Solve returns no Solution assignment. The
 	// solver knowns the status is Unknown until a call to p.Assume,
-	// p.AddClauses, or p.Solve resets the assumptions.
+	// p.Add, or p.Solve resets the assumptions.
 
 	// Output:
 	// Formula: [[1 2 3] [1 2] [2 3]]

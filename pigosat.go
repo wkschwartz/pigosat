@@ -228,8 +228,10 @@ func New(options *Options) (*Pigosat, error) {
 	// PicoSAT * picosat_init (void);
 	p := C.picosat_init()
 	if options != nil {
-		// void picosat_set_propagation_limit (PicoSAT *, unsigned long long limit);
-		C.picosat_set_propagation_limit(p, C.ulonglong(options.PropagationLimit))
+		if options.PropagationLimit > 0 {
+			// void picosat_set_propagation_limit (PicoSAT *, unsigned long long limit);
+			C.picosat_set_propagation_limit(p, C.ulonglong(options.PropagationLimit))
+		}
 		if options.OutputFile != nil {
 			cfile, err := cfdopen(options.OutputFile, "a")
 			if err != nil {
@@ -240,8 +242,10 @@ func New(options *Options) (*Pigosat, error) {
 			// void picosat_set_output (PicoSAT *, FILE *);
 			C.picosat_set_output(p, cfile)
 		}
-		// void picosat_set_verbosity (PicoSAT *, int new_verbosity_level);
-		C.picosat_set_verbosity(p, C.int(options.Verbosity))
+		if options.Verbosity > 0 {
+			// void picosat_set_verbosity (PicoSAT *, int new_verbosity_level);
+			C.picosat_set_verbosity(p, C.int(options.Verbosity))
+		}
 		if options.Prefix != "" {
 			// void picosat_set_prefix (PicoSAT *, const char *);
 			prefix := C.CString(options.Prefix)

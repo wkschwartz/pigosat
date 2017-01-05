@@ -83,7 +83,7 @@ import (
 	"unsafe"
 )
 
-var Version = SemanticVersion{1, 0, 0, "a", 0}
+var Version = SemanticVersion{1, 0, 0, "b", 0}
 
 // PicosatVersion is the version string from the underlying PicoSAT library.
 const PicosatVersion = "965"

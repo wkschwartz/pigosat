@@ -330,15 +330,12 @@ func (p *Pigosat) Seconds() time.Duration {
 	return time.Duration(float64(C.picosat_seconds(p.p)) * float64(time.Second))
 }
 
-// AddClauses adds a slice of clauses, each of which are a slice of literals.
-// Each clause is a list of integers called literals. The absolute value of the
-// literal i is the subscript for some variable x_i. If the literal is positive,
-// x_i must end up being true when the formula is solved. If the literal is
-// negative, it must end up false. Each clause ORs the literals together. All
-// the clauses are ANDed together. An optional zero ends a clause, even in the
-// middle of a slice; [1, 0, 2] is the same as [1, 0] is the same as [1].
-// Adding an empty Clause, either Clause{} or nil, in the Formula renders p's
-// underlying formula unsatisfiable.
+// AddClauses appends a slice of Clauses to p's existing formula. See the
+// documentation for Literal, Clause, and Formula to understand how p.Solve
+// will interpret the formula.
+//
+// A zero in a clause terminates the clause even if the zero is not at the end
+// of the slice. An empty clause always causes the formula to be unsatisfiable.
 func (p *Pigosat) AddClauses(clauses Formula) {
 	defer p.ready(false)()
 	var count int

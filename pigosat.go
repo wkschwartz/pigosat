@@ -85,7 +85,7 @@ import (
 
 var Version = SemanticVersion{1, 0, 0, "a", 0}
 
-// PicosatVersion is the version string from the underlying Picosat library.
+// PicosatVersion is the version string from the underlying PicoSAT library.
 const PicosatVersion = "965"
 
 // Argument/result types for Pigosat methods.
@@ -189,7 +189,7 @@ type Options struct {
 	// Default is "c ".
 	Prefix string
 
-	// Measure all time spent in all calls in Picosat's solver (extra time in
+	// Measure all time spent in all calls in PicoSAT's solver (extra time in
 	// PiGoSAT is generally linear in the number of variables). By default only
 	// the time spent in PicoSAT's internal solver is measured. Setting this
 	// option may as much as triple the time needed to add large formulas.

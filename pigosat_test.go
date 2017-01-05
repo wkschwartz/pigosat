@@ -370,6 +370,8 @@ func TestOutput(t *testing.T) {
 			}
 			p.AddClauses(ft.formula)
 			p.Solve()
+			// Ensure that closing p doesn't close the OutputFile.
+			p.delete()
 			// Now we make sure the file was written.
 			buf := make([]byte, len(prefix))
 			if n, err := tmp.ReadAt(buf, 0); err != nil {

@@ -114,7 +114,8 @@ type Options struct {
 	// tries to find a solution.
 	PropagationLimit uint64
 
-	// Default (nil value) output file stdout
+	// Default (nil value) output file stdout. The client is responsible for
+	// closing the file after he is done with the Pigosat object.
 	OutputFile *os.File
 
 	/* Set verbosity level. A verbosity level of 1 and above prints more and

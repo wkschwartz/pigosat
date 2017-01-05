@@ -94,7 +94,10 @@ func (s Status) String() string {
 // solver. It is safe for concurrent use.
 //
 // You must not use runtime.SetFinalizer with Pigosat objects. Attempting to
-// call a method on an uninitialized Pigosat object panics.
+// call a method on an uninitialized or deleted Pigosat object panics.
+//
+// Casual users of PiGoSAT need not call the Delete method. More intensive users
+// should consult the Delete's documentation.
 type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT
@@ -199,22 +202,27 @@ func New(options *Options) (*Pigosat, error) {
 		}
 	}
 	pgo := &Pigosat{p: p, lock: sync.RWMutex{}}
-	runtime.SetFinalizer(pgo, (*Pigosat).delete)
+	runtime.SetFinalizer(pgo, (*Pigosat).Delete)
 	return pgo, nil
 }
 
-// delete frees memory associated with p's PicoSAT object. It only needs to be
-// called from the runtime.SetFinalizer set in New.
-func (p *Pigosat) delete() {
-	// For some reason, SetFinalizer needs delete to be idempotent/reentrant.
-	// That said, since finalizers are only run when there are no more
-	// references to the object, there doesn't seem to be any point in locking.
+// Delete frees memory associated with p's PicoSAT object. Use of p's methods
+// after calling p.Delete() panics.
+//
+// Casual users do not need to call p.Delete() explicitly. The Go garbage
+// collector should call it automatically as a finalizer. However, if you are
+// creating large numbers of Pigosat objects or are writing a library,
+// explicitly call p.Delete() because the Go garbage collector does not
+// guarantee when or whether finalizers run.
+func (p *Pigosat) Delete() {
+	defer p.ready(false)() // Do not zero-out p.lock.
 	if p.p == nil {
 		return
 	}
 	// void picosat_reset (PicoSAT *);
 	C.picosat_reset(p.p)
 	p.p = nil
+	runtime.SetFinalizer(p, nil)
 }
 
 // ready readies a Pigosat object for use in a public method. It obtains the

@@ -371,7 +371,7 @@ func TestOutput(t *testing.T) {
 			p.AddClauses(ft.formula)
 			p.Solve()
 			// Ensure that closing p doesn't close the OutputFile.
-			p.delete()
+			p.Delete()
 			// Now we make sure the file was written.
 			buf := make([]byte, len(prefix))
 			if n, err := tmp.ReadAt(buf, 0); err != nil {
@@ -421,7 +421,7 @@ func assertPanics(t *testing.T, method string, f func()) {
 func TestUninitializedOrDeleted(t *testing.T) {
 	var a, b *Pigosat
 	b, _ = New(nil)
-	b.delete()
+	b.Delete()
 	for name, p := range map[string]*Pigosat{"uninit": a, "deleted": b} {
 		t.Run(name, func(t *testing.T) {
 			assertPanics(t, "AddClauses", func() {
@@ -608,6 +608,11 @@ func TestStatusString(t *testing.T) {
 // This is the example from the README.
 func Example_readme() {
 	p, _ := New(nil)
+
+	// Calling Delete is not usually necessary. Advanced users, see the Delete's
+	// documentation.
+	defer p.Delete()
+
 	p.AddClauses(Formula{{1, 2}, {1}, {-2}})
 	fmt.Printf("# variables == %d\n", p.Variables())
 	fmt.Printf("# clauses == %d\n", p.AddedOriginalClauses())

@@ -44,7 +44,7 @@ func (m *minimizer) LowerBound() int { return m.params.lower }
 
 func (m *minimizer) UpperBound() int { return m.params.upper }
 
-func (m *minimizer) IsFeasible(k int) (status Status, solution Solution) {
+func (m *minimizer) IsFeasible(k int) (solution Solution, status Status) {
 	if k < from {
 		m.t.Errorf("k too low: %d", k)
 	}
@@ -59,7 +59,7 @@ func (m *minimizer) IsFeasible(k int) (status Status, solution Solution) {
 	return
 }
 
-func (m *minimizer) RecordSolution(k int, status Status, solution Solution) {
+func (m *minimizer) RecordSolution(k int, solution Solution, status Status) {
 	m.args = append(m.args, arguments{k, status, solution})
 }
 

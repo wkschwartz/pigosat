@@ -21,11 +21,11 @@ type Minimizer interface {
 	// any set of constraints it likes as long as there is a unique integer K
 	// such that k < K implies IsFeasible(k) returns status Unsatisfiable and
 	// k >= K implies IsFeasible(k) returns status Satisfiable.
-	IsFeasible(k int) (status Status, solution Solution)
+	IsFeasible(k int) (solution Solution, status Status)
 
 	// RecordSolution allows types implementing this interface to store
 	// solutions for after minimization has finished.
-	RecordSolution(k int, status Status, solution Solution)
+	RecordSolution(k int, solution Solution, status Status)
 }
 
 // Minimize finds the value min that minimizes Minimizer m. If the value can be
@@ -40,15 +40,15 @@ func Minimize(m Minimizer) (min int, optimal, feasible bool) {
 	if hi < lo {
 		panic(fmt.Errorf("UpperBound()=%d < LowerBound()=%d", hi, lo))
 	}
-	status, solution := m.IsFeasible(hi)
-	m.RecordSolution(hi, status, solution)
+	solution, status := m.IsFeasible(hi)
+	m.RecordSolution(hi, solution, status)
 	if status != Satisfiable {
 		return hi, false, false
 	}
 	for hi > lo {
 		k := lo + (hi-lo)/2 // avoid overfow. See sort/search.go in stdlib
-		status, solution = m.IsFeasible(k)
-		m.RecordSolution(k, status, solution)
+		solution, status = m.IsFeasible(k)
+		m.RecordSolution(k, solution, status)
 		if status == Satisfiable {
 			hi = k
 		} else {

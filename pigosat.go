@@ -155,7 +155,7 @@ func (s Status) String() string {
 // call a method on an uninitialized or deleted Pigosat object panics.
 //
 // Casual users of PiGoSAT need not call the Delete method. More intensive users
-// should consult the Delete's documentation.
+// should consult Delete's documentation.
 type Pigosat struct {
 	// Pointer to the underlying C struct.
 	p    *C.PicoSAT

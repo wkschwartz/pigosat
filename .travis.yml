@@ -6,4 +6,5 @@ go: # Go maintains the last two versions. As of July 2017, 1.8.3 is current.
     - 1.7
 before_script:
     - go vet ./...
-gobuild_args: -race -v
+script:
+    - go test -race -v ./...

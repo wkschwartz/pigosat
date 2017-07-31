@@ -349,7 +349,8 @@ func TestPropLimit(t *testing.T) {
 	}
 }
 
-// Test Option.OutputFile, Option.Verbosity, and Option.Prefix all at once.
+// Test cfdopen, Option.OutputFile, Option.Verbosity, and Option.Prefix all at
+// once.
 func TestOutput(t *testing.T) {
 	for i, ft := range formulaTests {
 		t.Run(fmt.Sprintf("formulaTests[%d]", i), func(t *testing.T) {
@@ -383,6 +384,25 @@ func TestOutput(t *testing.T) {
 			}
 		})
 	}
+
+	// Test the error from a bogus OutputFile
+	t.Run("Bogus OutputFile", func(t *testing.T) {
+		tmp, err := ioutil.TempFile("", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		tmp.Close()
+		if err := os.Remove(tmp.Name()); err != nil {
+			t.Error(err)
+		}
+
+		if _, err := cfdopen(tmp, "a"); err == nil {
+			t.Error("Expected cfdopen to fail on closed file.")
+		}
+		if p, err := New(&Options{OutputFile: tmp}); p != nil || err == nil {
+			t.Error("Expected Pigosat.New with bogus OutputFile to fail")
+		}
+	})
 }
 
 // Without MeasureAllCalls, AddClasuses is not measured. With it, it is.

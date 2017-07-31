@@ -83,7 +83,8 @@ import (
 	"unsafe"
 )
 
-var Version = SemanticVersion{1, 0, 0, "b", 0}
+// Version is PiGoSAT's semantic version number. See http://semver.org.
+const Version = "1.0.0-beta"
 
 // PicosatVersion is the version string from the underlying PicoSAT library.
 const PicosatVersion = "965"

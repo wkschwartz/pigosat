@@ -501,20 +501,10 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 	if err != nil {
 		return err
 	}
-	// To avoid double closing wp, close it explicitly at each error branch.
-	// Closing rp here is a data race with the io.Copy(w, rp) call in the
-	// goroutine below, but only if there is an error that causes the the outer
-	// function to return early. But then io.Copy will just return an error,
-	// which we (reasonably) ignore.
-	defer func() {
-		if e := rp.Close(); e != nil { // Don't hide prior errors.
-			err = e
-		}
-	}()
-
 	cfile, err := cfdopen(wp, "a") // wp.Close() below closes cfile.
 	if err != nil {
 		wp.Close()
+		rp.Close()
 		return err
 	}
 
@@ -526,21 +516,23 @@ func cFileWriterWrapper(w io.Writer, writeFn func(*C.FILE) error) (err error) {
 		errChan <- e
 	}()
 
-	if err = writeFn(cfile); err != nil {
-		wp.Close()
-		return err
-	}
-
-	// We have to close wp or rp won't know it's hit the end of the data.
+	err = writeFn(cfile)
 	// Without flushing cfile, the data might get stuck in the C buffer.
-	if ok, err := C.fflush(cfile); ok != 0 {
-		wp.Close()
-		return err
+	if _, e := C.fflush(cfile); err == nil {
+		err = e
 	}
-	if err = wp.Close(); err != nil {
-		return err
+	// We have to close wp before rp or rp won't know the file has ended.
+	if e := wp.Close(); err == nil {
+		err = e
 	}
-	return <-errChan
+	// We have to empty errChan to avoid data race between rp.Close and io.Copy.
+	if e := <-errChan; err == nil {
+		err = e
+	}
+	if e := rp.Close(); err == nil {
+		err = e
+	}
+	return
 }
 
 // repeatWriteFn returns a writeFn for use with cFileWriterWrapper. The returned

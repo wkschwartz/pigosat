@@ -3,6 +3,8 @@ PiGoSAT
 
 Go (golang) bindings for Picosat, the satisfiability solver
 
+Tested on Go versions 1.7 and 1.8, but may work on earlier versions of Go.
+
 Downloading
 -----------
 
@@ -32,3 +34,28 @@ request](https://help.github.com/articles/using-pull-requests).
 
 Replace `picsoat.h`, `picosat.c`, and update `PicosatVersion` in
 `pigosat.go`. Copy `LICENSE` from PicoSAT to `LICENSE.picosat` in PiGoSAT.
+
+### Other maintenance notes
+
+Test PiGoSAT by switching to its source directory and running
+
+```bash
+$ go vet .
+$ go test -race
+```
+
+Before committing, please run
+
+```bash
+$ gofmt -w -s
+```
+
+The only place you need to update the version number is in `pigosat.go`'s
+`Version` constant. However, if you `git tag` or make a release on GitHub,
+make sure the version number matches the tag name.
+
+When a new major or minor version (x.0 or 1.x) of Go is available, increment the
+versions you test PiGoSAT with in `.travis.yml`, `.appveryor.yml` (if
+applicable), and make a note at the top of this README document. Go only
+supports the current and last minor versions (e.g., 1.8 and 1.7) with security
+releases, so these are the versions that PiGoSAT should support.

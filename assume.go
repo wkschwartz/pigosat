@@ -10,7 +10,7 @@ import "unsafe"
 // into test files.
 var cArray123 = [3]C.int{1, 2, 3}
 var cArray1230 = [4]C.int{1, 2, 3, 0}
-var cZero C.int = 0
+var cZero C.int
 
 // Assume adds a temporary unit clause, i.e., a clause containing the one
 // literal you pass as an argument. An assumption remains valid after the next

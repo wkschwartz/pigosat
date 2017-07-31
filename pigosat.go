@@ -91,21 +91,22 @@ const PicosatVersion = "965"
 
 // Argument/result types for Pigosat methods.
 
-// Literals are variables or their logical negations, except that we name
-// variables by ID numbers starting from one, and we use arithmetic negation to
-// indicate logical negation. The zero literal indicates the end of a clause.
+// Literal represents a variable or its logical negations. We name variables by
+// ID numbers starting from one and use arithmetic negation to indicate logical
+// negation. The zero literal indicates the end of a clause.
 type Literal int32
 
-// Clauses are slices of literals ORed together. An optional zero ends a clause,
-// even in the middle of a slice; [1, 0, 2] is the same as [1, 0] is the same as
+// Clause is a slice of Literals ORed together. An optional zero ends a clause,
+// even in the middle of a slice: [1, 0, 2] is the same as [1, 0] is the same as
 // [1]. An empty Clause always evaluates false and thus can never be satisfied.
 type Clause []Literal
 
-// Formulas are slices of Clauses ANDed together.
+// Formula is a slice of Clauses ANDed together.
 type Formula []Clause
 
-// Solutions are indexed by variable and return the truth value of the given
-// variable. The zeroth element has no meaning and is always false.
+// Solution is a slice of truth values indexed by and corresponding to each
+// variable's ID number (starting at one). The zeroth element has no meaning and
+// is always false.
 type Solution []bool
 
 // String returns a readable string like "{1:true, 2:false, ...}" for Solution
@@ -124,7 +125,7 @@ func (s Solution) String() string {
 	return buffer.String()
 }
 
-// Statuses are returned by Pigosat.Solve to indicate success or failure.
+// Status is returned by Pigosat.Solve to indicate success or failure.
 type Status int
 
 // Return values for Pigosat.Solve's status.
@@ -149,8 +150,8 @@ func (s Status) String() string {
 	return fmt.Sprintf("Status(%d)", s)
 }
 
-// Struct Pigosat must be created with New and stores the state of the
-// solver. It is safe for concurrent use.
+// Pigosat must be created with New and stores the state of the solver. It is
+// safe for concurrent use.
 //
 // You must not use runtime.SetFinalizer with Pigosat objects. Attempting to
 // call a method on an uninitialized or deleted Pigosat object panics.
@@ -169,8 +170,8 @@ type Pigosat struct {
 	couldHaveFailedAssumptions bool
 }
 
-// Struct Options contains optional settings for the Pigosat constructor. Zero
-// values for each field indicate default behavior.
+// Options contains optional settings for the Pigosat constructor. Zero values
+// for each field indicate default behavior.
 type Options struct {
 	// Set PropagationLimit to a positive value to limit how long the solver
 	// tries to find a solution.

@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// Type Minimizer allows you to find the lowest integer K such that
+// Minimizer allows you to find the lowest integer K such that
 //    LowerBound() <= K <= UpperBound()
 // and IsFeasible(K) returns status Satisfiable.
 type Minimizer interface {

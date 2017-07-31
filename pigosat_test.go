@@ -492,17 +492,17 @@ func TestCFileWriterWrapper(t *testing.T) {
 	// Do not mark this test as being parallelizable (using t.Parallel())
 	// because it counts the number of goroutines.
 	fakeError := fmt.Errorf("fake error")
-	num_goroutines_before := runtime.NumGoroutine()
+	numGoroutinesBefore := runtime.NumGoroutine()
 	err = cFileWriterWrapper(&buf, repeatWriteFn(size, content, fakeError))
 	time.Sleep(100 * time.Microsecond) // Give goroutine enough time to finish
-	num_goroutines_after := runtime.NumGoroutine()
+	numGoroutinesAfter := runtime.NumGoroutine()
 	if err != fakeError {
 		t.Error(err)
 	}
-	if num_goroutines_after != num_goroutines_before {
+	if numGoroutinesAfter != numGoroutinesBefore {
 		t.Errorf("Possible goroutine leak. Before calling cFileWriterWrapper "+
 			"there were %d goroutines, and afterward there were %d.",
-			num_goroutines_before, num_goroutines_after)
+			numGoroutinesBefore, numGoroutinesAfter)
 	}
 }
 

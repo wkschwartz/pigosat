@@ -52,7 +52,7 @@ $ go test -race
 Before committing, please run
 
 ```bash
-$ gofmt -w -s
+$ gofmt -w -s .
 ```
 
 The only place you need to update the version number is in `pigosat.go`'s

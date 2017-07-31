@@ -7,6 +7,7 @@ Tested on Go versions 1.7 and 1.8, but may work on earlier versions of Go.
 
 [![GoDoc](https://godoc.org/github.com/wkschwartz/pigosat/github?status.svg)](https://godoc.org/github.com/wkschwartz/pigosat)
 [![Build Status](https://travis-ci.org/wkschwartz/pigosat.svg?branch=master)](https://travis-ci.org/wkschwartz/pigosat)
+[![Coverage Status](https://coveralls.io/repos/github/wkschwartz/pigosat/badge.svg?branch=master)](https://coveralls.io/github/wkschwartz/pigosat?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wkschwartz/pigosat)](https://goreportcard.com/report/github.com/wkschwartz/pigosat)
 
 Downloading

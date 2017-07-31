@@ -10,3 +10,7 @@ before_script:
     - go vet ./...
 script:
     - go test -race -v ./...
+    - $HOME/gopath/bin/goveralls -service=travis-ci
+# For coveralls.io
+before_install:
+    - go get github.com/mattn/goveralls

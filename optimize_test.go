@@ -112,8 +112,8 @@ func TestMinimize(t *testing.T) {
 	} // hi
 
 	// Test the error when UpperBound() < LowerBound()
-	t.Run("UpperBound < LowerBound", func (t *testing.T) {
+	t.Run("UpperBound < LowerBound", func(t *testing.T) {
 		m := newMinimizer(to, from, to, t)
-		assertPanics(t, "Minimize", func () { Minimize(m) })
+		assertPanics(t, "Minimize", func() { Minimize(m) })
 	})
 } // func

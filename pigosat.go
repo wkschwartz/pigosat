@@ -84,7 +84,7 @@ import (
 )
 
 // Version is PiGoSAT's semantic version number. See http://semver.org.
-const Version = "1.0.0-beta"
+const Version = "1.0.0-rc.1"
 
 // PicosatVersion is the version string from the underlying PicoSAT library.
 const PicosatVersion = "965"

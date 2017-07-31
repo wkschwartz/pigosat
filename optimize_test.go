@@ -3,6 +3,7 @@ package pigosat
 import (
 	"reflect"
 	"testing"
+	"fmt"
 )
 
 // TestMinimize will test optimal values from `from` to `to`.
@@ -91,22 +92,25 @@ func TestMinimize(t *testing.T) {
 	for hi := from; hi <= to; hi++ {
 		for lo := from; lo <= hi; lo++ {
 			for opt := lo; opt <= hi+1; opt++ {
-				m := newMinimizer(lo, hi, opt, t)
-				min, optimal, feasible := Minimize(m)
-				checkFeasibleRecord(t, m.params, m.args)
-				if opt <= hi && min != opt {
-					t.Errorf("%+v: min=%d", m.params, min)
-				}
-				if opt > lo && opt <= hi && !optimal {
-					t.Errorf("%+v: Should have been optimal", m.params)
-				} else if opt <= lo && optimal {
-					t.Errorf("%+v: Should not have been optimal", m.params)
-				}
-				if opt <= hi && !feasible {
-					t.Errorf("%+v: Should have been feasible", m.params)
-				} else if opt > hi && feasible {
-					t.Errorf("%+v: Should not have been feasible", m.params)
-				}
+				t.Run(fmt.Sprintf("hi=%d,lo=%d,opt=%d", hi, lo, opt),
+					  func (t *testing.T) {
+					m := newMinimizer(lo, hi, opt, t)
+					min, optimal, feasible := Minimize(m)
+					checkFeasibleRecord(t, m.params, m.args)
+					if opt <= hi && min != opt {
+						t.Errorf("%+v: min=%d", m.params, min)
+					}
+					if opt > lo && opt <= hi && !optimal {
+						t.Errorf("%+v: Should have been optimal", m.params)
+					} else if opt <= lo && optimal {
+						t.Errorf("%+v: Should not have been optimal", m.params)
+					}
+					if opt <= hi && !feasible {
+						t.Errorf("%+v: Should have been feasible", m.params)
+					} else if opt > hi && feasible {
+						t.Errorf("%+v: Should not have been feasible", m.params)
+					}
+				})
 			} // opt
 		} // lo
 	} // hi

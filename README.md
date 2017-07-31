@@ -59,7 +59,7 @@ The only place you need to update the version number is in `pigosat.go`'s
 make sure the version number matches the tag name.
 
 When a new major or minor version (x.0 or 1.x) of Go is available, increment the
-versions you test PiGoSAT with in `.travis.yml`, `.appveryor.yml` (if
-applicable), and make a note at the top of this README document. Go only
-supports the current and last minor versions (e.g., 1.8 and 1.7) with security
-releases, so these are the versions that PiGoSAT should support.
+versions you test PiGoSAT with in `.travis.yml`, and make a note at the top of
+this README document. Go only supports the current and last minor versions
+(e.g., 1.8 and 1.7) with security releases, so these are the versions that
+PiGoSAT should support.

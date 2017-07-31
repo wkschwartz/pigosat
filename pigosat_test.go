@@ -425,9 +425,8 @@ func TestMeasureAllCalls(t *testing.T) {
 	}
 }
 
-// Assert that function f panics when called. test is a string identifying which
-// input data are being tested. method is a string identifying which method is
-// being tested in f.
+// Assert that function f panics when called. method is a string identifying
+// which method is being tested in f.
 func assertPanics(t *testing.T, method string, f func()) {
 	defer func() {
 		if r := recover(); r == nil {

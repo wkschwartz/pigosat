@@ -1,9 +1,9 @@
 language: go
 
-go: # Go maintains the last two versions. As of July 2017, 1.8.3 is current.
+go: # Go maintains the last two versions. As of August 2017, 1.9 is current.
     - tip
+    - 1.9
     - 1.8
-    - 1.7
 allow_failures:
     - go: tip
 before_script:

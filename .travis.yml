@@ -2,8 +2,8 @@ language: go
 
 go: # Go maintains the last two versions https://golang.org/doc/devel/release.html#policy
     - tip
-    - 1.10
-    - 1.9
+    - 1.10.x
+    - 1.9.x
 allow_failures:
     - go: tip
 script:

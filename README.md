@@ -3,7 +3,7 @@ PiGoSAT
 
 Go (golang) bindings for Picosat, the satisfiability solver
 
-Tested on Go versions 1.8 and 1.9, but may work on earlier versions of Go.
+Tested on Go versions 1.9 and 1.10, but likely works on earlier versions of Go.
 
 [![GoDoc](https://godoc.org/github.com/wkschwartz/pigosat/github?status.svg)](https://godoc.org/github.com/wkschwartz/pigosat)
 [![Build Status](https://travis-ci.org/wkschwartz/pigosat.svg?branch=master)](https://travis-ci.org/wkschwartz/pigosat)
@@ -45,7 +45,6 @@ Replace `picsoat.h`, `picosat.c`, and update `PicosatVersion` in
 Test PiGoSAT by switching to its source directory and running
 
 ```bash
-$ go vet .
 $ go test -race
 ```
 
